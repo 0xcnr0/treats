@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 import fs from "node:fs";
-import { append, undoLast, resetLedger, loadLedger, loadState, ensureConfig } from "../src/ledger.js";
+import { append, undoLast, resetLedger, loadLedger, loadState, loadConfig, saveConfig, ensureConfig } from "../src/ledger.js";
 import { gradeFor, currentStreak, gpa } from "../src/grades.js";
 import { buildReport, archiveReport } from "../src/report.js";
 import { play, speak } from "../src/sound.js";
 import { runHook } from "../src/hooks.js";
+import { ANIMALS, getAnimal, animalKeys } from "../src/animals.js";
+
+const animal = () => getAnimal(loadConfig().animal);
 
 function usage() {
   return `treats — train Claude Code like a puppy 🦴
@@ -17,6 +20,7 @@ Usage:
   treats status [--json]     Show treats, rank and the last thing it did
   treats report [--out FILE] Print (or write) a training report card
   treats report --archive    Write a date-stamped card to the archive
+  treats animal [name]       Show or change your animal (dog, cat, dragon, ...)
   treats hook <event>        Internal: Claude Code hook adapter
   treats install-hooks       Install hooks into ~/.claude/settings.json
 
@@ -36,26 +40,51 @@ function rankLine(balance) {
 
 function cmdReward(args) {
   const reason = args.join(" ");
+  const a = animal();
   // Attribute to the last finished task's session, if Stop recorded one.
   const sessionId = loadState().lastStopSessionId || null;
   const { balance } = append({ type: "reward", reason, sessionId });
   play("reward");
-  console.log(`🦴 Treat given (+1). Treats: ${balance} — ${rankLine(balance)}`);
+  console.log(`${a.treat} ${a.give} (+1). Treats: ${balance} — ${rankLine(balance)}`);
   if (reason) console.log(`   For: ${reason}`);
 }
 
 function cmdPunish(args) {
   const reason = args.join(" ");
+  const a = animal();
   const sessionId = loadState().lastStopSessionId || null;
   const { balance } = append({ type: "punish", reason, sessionId });
   play("punish");
   const grade = gradeFor(balance);
-  console.log(`🚫 Bad dog (-1). Treats: ${balance} — ${grade.emoji} ${grade.name}`);
+  console.log(`🚫 ${a.scold} (-1). Treats: ${balance} — ${grade.emoji} ${grade.name}`);
   if (reason) console.log(`   For: ${reason}`);
-  // Audible scolding once Claude drops into Bad Dog or the Doghouse.
+  // Audible scolding once the animal drops into a warning/stern rank.
   if (grade.tone === "warning" || grade.tone === "stern") {
-    speak(`Bad dog. ${balance} treats.`);
+    speak(`${a.speak} ${balance} treats.`);
   }
+}
+
+function cmdAnimal(args) {
+  const cfg = loadConfig();
+  const key = args[0];
+  if (!key) {
+    const cur = getAnimal(cfg.animal);
+    console.log(`Current animal: ${cur.emoji} ${cur.label} (treat: ${cur.treat})`);
+    console.log("Available: " + animalKeys().map((k) => `${ANIMALS[k].emoji} ${k}`).join("  "));
+    console.log("Change it with:  treats animal <name>");
+    return;
+  }
+  if (!ANIMALS[key]) {
+    console.error(`Unknown animal: ${key}`);
+    console.log("Available: " + animalKeys().join(", "));
+    process.exitCode = 1;
+    return;
+  }
+  saveConfig({ animal: key });
+  const a = getAnimal(key);
+  console.log(`${a.emoji} Your AI is now a ${a.label}. Treats look like ${a.treat}.`);
+  const { balance } = loadLedger();
+  console.log(`   Current rank: ${rankLine(balance)}`);
 }
 
 function cmdUndo() {
@@ -158,6 +187,9 @@ async function main() {
       break;
     case "report":
       cmdReport(args);
+      break;
+    case "animal":
+      cmdAnimal(args);
       break;
     case "hook":
       await runHook(args[0]);

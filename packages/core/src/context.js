@@ -1,5 +1,6 @@
-import { loadLedger } from "./ledger.js";
+import { loadLedger, loadConfig } from "./ledger.js";
 import { gradeFor, currentStreak, dominantTheme } from "./grades.js";
+import { getAnimal } from "./animals.js";
 
 const MAX_LEN = 450;
 const REASON_MAX = 60;
@@ -46,14 +47,15 @@ export function buildContext({ entryCount = 5 } = {}) {
   );
   const streak = currentStreak(entries);
 
+  const animal = getAnimal(loadConfig().animal);
+
   let nudge;
-  if (grade.name === "Doghouse") {
-    nudge =
-      "You are in the DOGHOUSE. Stop and reconsider your approach completely before continuing.";
+  if (grade.tone === "stern") {
+    nudge = `Rock bottom (${grade.name}). Stop and reconsider your approach completely before continuing.`;
   } else if (punishCount >= 3) {
-    nudge = `You've been a bad dog on ${punishCount} of the last ${window.length} tasks${theme ? `; repeated reason: ${theme}` : ""}. Shape up to earn treats.`;
+    nudge = `You've been ${animal.badPhrase} on ${punishCount} of the last ${window.length} tasks${theme ? `; repeated reason: ${theme}` : ""}. Shape up to earn treats.`;
   } else if (streak.type === "reward" && streak.count >= 3) {
-    nudge = `${streak.count} treats in a row — good boy, keep doing exactly that.`;
+    nudge = `${streak.count} treats in a row — keep doing exactly that.`;
   } else if (theme) {
     nudge = `Watch out for the recurring issue: ${theme}.`;
   } else {

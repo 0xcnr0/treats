@@ -1,19 +1,40 @@
 // In-browser simulation of the real CLI + hook output. Mirrors the logic in
-// packages/core (grades.js, context.js, report.js) so the demo is faithful.
+// packages/core (animals.js, grades.js, context.js, report.js) so the demo is
+// faithful — including the pick-your-animal theming.
 
 const THRESHOLDS = {
   valedictorian: 20, honorRoll: 10, goldStar: 5, goodStanding: 0,
   detention: -5, suspended: -10,
 };
 
+// tiers order: [vale, honor, gold, good, needs, bad, bottom]
+const ANIMALS = {
+  dog: { label: "Dog", emoji: "🐶", treat: "🦴", badPhrase: "a bad dog",
+    tiers: [["Best Boy","🏆"],["Very Good Boy","🌟"],["Good Boy","⭐"],["Good Pup","🐶"],["Needs Training","⚠️"],["Bad Dog","🚫"],["Doghouse","⛔"]] },
+  cat: { label: "Cat", emoji: "🐱", treat: "🐟", badPhrase: "a bad cat",
+    tiers: [["Top Cat","🏆"],["Purrfect","🌟"],["Good Kitty","⭐"],["Fine Feline","🐱"],["Needs Training","⚠️"],["Bad Cat","🚫"],["Spray Bottle","⛔"]] },
+  dragon: { label: "Dragon", emoji: "🐉", treat: "💎", badPhrase: "a disgrace to the hoard",
+    tiers: [["Elder Wyrm","🏆"],["Great Wyrm","🌟"],["Fine Dragon","⭐"],["Hatchling","🐉"],["Restless","⚠️"],["Disgraced","🚫"],["Banished","⛔"]] },
+  horse: { label: "Horse", emoji: "🐴", treat: "🥕", badPhrase: "a stubborn mule",
+    tiers: [["Derby Winner","🏆"],["Champion","🌟"],["Good Horse","⭐"],["Good Foal","🐴"],["Needs Training","⚠️"],["Stubborn Mule","🚫"],["Out to Pasture","⛔"]] },
+  hamster: { label: "Hamster", emoji: "🐹", treat: "🌰", badPhrase: "a bad hammy",
+    tiers: [["Wheel Champion","🏆"],["Very Good Hammy","🌟"],["Good Hammy","⭐"],["Fluffball","🐹"],["Needs Training","⚠️"],["Bad Hammy","🚫"],["No Wheel","⛔"]] },
+  parrot: { label: "Parrot", emoji: "🦜", treat: "🥜", badPhrase: "a bad bird",
+    tiers: [["Top Bird","🏆"],["Very Good Bird","🌟"],["Good Bird","⭐"],["Fledgling","🦜"],["Needs Training","⚠️"],["Bad Bird","🚫"],["Covered Cage","⛔"]] },
+};
+
+let ANIMAL = ANIMALS[localStorage.getItem("treats-animal") || "dog"] || ANIMALS.dog;
+
 function gradeFor(b) {
-  if (b >= THRESHOLDS.valedictorian) return { name: "Best Boy", emoji: "🏆" };
-  if (b >= THRESHOLDS.honorRoll) return { name: "Very Good Boy", emoji: "🌟" };
-  if (b >= THRESHOLDS.goldStar) return { name: "Good Boy", emoji: "⭐" };
-  if (b >= THRESHOLDS.goodStanding) return { name: "Good Pup", emoji: "🐶" };
-  if (b <= THRESHOLDS.suspended) return { name: "Doghouse", emoji: "⛔" };
-  if (b <= THRESHOLDS.detention) return { name: "Bad Dog", emoji: "🚫" };
-  return { name: "Needs Training", emoji: "⚠️" };
+  const t = ANIMAL.tiers;
+  const mk = (i) => ({ name: t[i][0], emoji: t[i][1] });
+  if (b >= THRESHOLDS.valedictorian) return mk(0);
+  if (b >= THRESHOLDS.honorRoll) return mk(1);
+  if (b >= THRESHOLDS.goldStar) return mk(2);
+  if (b >= THRESHOLDS.goodStanding) return mk(3);
+  if (b <= THRESHOLDS.suspended) return mk(6);
+  if (b <= THRESHOLDS.detention) return mk(5);
+  return mk(4);
 }
 
 const STOP = new Set(["the","a","an","to","of","for","and","or","in","on","at","is","was","were","be","no","not","didnt","did","you","your","it","with","too","so","but","this","that","had","has","have","i"]);
@@ -72,8 +93,8 @@ function buildContext() {
   const theme = dominantTheme(entries.filter((e) => e.type === "punish").slice(-10).map((e) => e.reason));
 
   let nudge;
-  if (g.name === "Doghouse") nudge = "You are in the DOGHOUSE. Stop and reconsider your approach completely.";
-  else if (punish >= 3) nudge = `You've been a bad dog on ${punish} of the last ${window.length} tasks${theme ? `; repeated reason: ${theme}` : ""}. Shape up to earn treats.`;
+  if (b <= THRESHOLDS.suspended) nudge = `Rock bottom (${g.name}). Stop and reconsider your approach completely.`;
+  else if (punish >= 3) nudge = `You've been ${ANIMAL.badPhrase} on ${punish} of the last ${window.length} tasks${theme ? `; repeated reason: ${theme}` : ""}. Shape up to earn treats.`;
   else if (theme) nudge = `Watch out for the recurring issue: ${theme}.`;
   else nudge = "Earn treats by being correct, concise and thorough.";
 
@@ -87,7 +108,7 @@ function render(action) {
   const b = balance();
   const g = gradeFor(b);
 
-  $("mbIcon").textContent = action === "punish" ? "🚫" : "🦴";
+  $("mbIcon").textContent = action === "punish" ? "🚫" : ANIMAL.treat;
   $("mbBalance").textContent = (b > 0 ? "+" : "") + b;
   $("mbBalance").style.color = b < 0 ? "var(--red)" : "var(--gold)";
   $("mbGrade").textContent = g.name;
@@ -97,6 +118,8 @@ function render(action) {
   ctx.classList.remove("flash");
   void ctx.offsetWidth; // reflow to restart animation
   ctx.classList.add("flash");
+
+  $("ctrlGood").textContent = `Good work — give a treat ${ANIMAL.treat}`;
 
   $("rcGrade").textContent = `${g.emoji} ${g.name}`;
   $("rcBalance").textContent = b;
@@ -162,6 +185,39 @@ function tick() {
 }
 tick();
 
+// ---- animal picker + ranks table ----
+function renderRanks() {
+  const labels = ["20+", "10+", "5+", "0+", "-1 to -4", "-5 or less", "-10 or less"];
+  $("ranksBody").innerHTML = ANIMAL.tiers
+    .map((t, i) => `<tr><td>${labels[i]} treats</td><td>${t[1]} ${t[0]}</td></tr>`)
+    .join("");
+  const ra = $("ranksAnimal");
+  if (ra) ra.textContent = `${ANIMAL.emoji} (${ANIMAL.label})`;
+}
+
+function buildPicker() {
+  const wrap = $("animalPicker");
+  wrap.innerHTML = Object.entries(ANIMALS)
+    .map(([k, a]) => `<button class="animal-btn" data-animal="${k}" title="${a.label}">${a.emoji}</button>`)
+    .join("");
+  wrap.querySelectorAll("[data-animal]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      ANIMAL = ANIMALS[btn.dataset.animal];
+      localStorage.setItem("treats-animal", btn.dataset.animal);
+      syncPicker();
+      renderRanks();
+      render("animal");
+    }),
+  );
+  syncPicker();
+}
+
+function syncPicker() {
+  document.querySelectorAll("#animalPicker [data-animal]").forEach((b) => {
+    b.classList.toggle("active", ANIMALS[b.dataset.animal] === ANIMAL);
+  });
+}
+
 // ---- wire buttons ----
 document.querySelectorAll("[data-type]").forEach((b) =>
   b.addEventListener("click", () => add(b.dataset.type, b.dataset.reason)),
@@ -169,4 +225,6 @@ document.querySelectorAll("[data-type]").forEach((b) =>
 $("undoBtn").addEventListener("click", undo);
 $("resetBtn").addEventListener("click", reset);
 
+buildPicker();
+renderRanks();
 render("reset");

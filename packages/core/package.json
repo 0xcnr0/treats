@@ -11,6 +11,7 @@
     "./ledger": "./src/ledger.js",
     "./grades": "./src/grades.js",
     "./context": "./src/context.js",
+    "./animals": "./src/animals.js",
     "./paths": "./src/paths.js",
     "./sound": "./src/sound.js"
   },

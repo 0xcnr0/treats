@@ -1,26 +1,19 @@
 import { loadConfig } from "./ledger.js";
+import { getAnimal } from "./animals.js";
 
-// Map a treat balance to a dog-training rank using configurable thresholds.
-export function gradeFor(balance, thresholds = loadConfig().thresholds) {
-  if (balance >= thresholds.valedictorian) {
-    return { name: "Best Boy", emoji: "🏆", tone: "celebratory" };
-  }
-  if (balance >= thresholds.honorRoll) {
-    return { name: "Very Good Boy", emoji: "🌟", tone: "proud" };
-  }
-  if (balance >= thresholds.goldStar) {
-    return { name: "Good Boy", emoji: "⭐", tone: "encouraging" };
-  }
-  if (balance >= thresholds.goodStanding) {
-    return { name: "Good Pup", emoji: "🐶", tone: "neutral" };
-  }
-  if (balance <= thresholds.suspended) {
-    return { name: "Doghouse", emoji: "⛔", tone: "stern" };
-  }
-  if (balance <= thresholds.detention) {
-    return { name: "Bad Dog", emoji: "🚫", tone: "warning" };
-  }
-  return { name: "Needs Training", emoji: "⚠️", tone: "concerned" };
+// Map a treat balance to a rank for the configured animal. The animal's
+// `tiers` array is ordered to line up with these thresholds.
+export function gradeFor(balance, cfg = loadConfig()) {
+  const thresholds = cfg.thresholds;
+  const tiers = getAnimal(cfg.animal).tiers;
+  const [vale, honor, gold, good, needs, bad, bottom] = tiers;
+  if (balance >= thresholds.valedictorian) return { ...vale, tone: "celebratory" };
+  if (balance >= thresholds.honorRoll) return { ...honor, tone: "proud" };
+  if (balance >= thresholds.goldStar) return { ...gold, tone: "encouraging" };
+  if (balance >= thresholds.goodStanding) return { ...good, tone: "neutral" };
+  if (balance <= thresholds.suspended) return { ...bottom, tone: "stern" };
+  if (balance <= thresholds.detention) return { ...bad, tone: "warning" };
+  return { ...needs, tone: "concerned" };
 }
 
 // Length of the current same-type streak at the end of the ledger.

@@ -2,7 +2,7 @@
 
 [![Website](https://img.shields.io/badge/website-treats-ffcf4d)](https://treats-ai.vercel.app)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Platform: macOS](https://img.shields.io/badge/platform-macOS-black)
+![Platform](https://img.shields.io/badge/CLI-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-black)
 
 > **Train Claude Code like a puppy.** Give it a treat 🦴 for good work, a "bad dog" 🚫
 > when it slips — and it actually behaves better next time.
@@ -67,7 +67,15 @@ treats reset --yes        # wipe the record (backs it up first)
 treats status [--json]    # treats, rank, obedience, last thing it did
 treats report             # a markdown training report card
 treats report --archive   # date-stamped card into the archive
+treats animal [name]      # pick your animal (dog/cat/dragon/horse/hamster/parrot)
 ```
+
+## Pick your animal 🐶🐱🐉🐴🐹🦜
+
+Your AI doesn't have to be a dog. `treats animal cat` and the whole thing
+re-themes — emojis, ranks and phrasing follow. A cat climbs from *Fine Feline*
+to *Top Cat* (or lands at the *Spray Bottle*); a dragon grows its hoard from
+*Hatchling* to *Elder Wyrm*. Try them live on the [website](https://treats-ai.vercel.app).
 
 ## How it actually works (the feedback loop)
 
@@ -98,10 +106,15 @@ Everything lives in `~/.treats/` on your own machine — no accounts, no servers
 npm run overlay
 ```
 
-A bone 🦴 appears in your menu bar with your current score. Global shortcuts:
+Your animal's treat icon appears in your menu bar with the current score.
+Global shortcuts (Electron maps `CommandOrControl`, so they work cross-platform):
 
-- **⌘⇧G** — give a treat (sparkle + chime, +1)
-- **⌘⇧B** — bad dog (whip-crack + red flash, -1)
+- **⌘⇧G** (Mac) / **Ctrl+Shift+G** (Windows·Linux) — give a treat (sparkle + chime, +1)
+- **⌘⇧B** (Mac) / **Ctrl+Shift+B** (Windows·Linux) — bad dog (whip-crack + red flash, -1)
+
+> The CLI, hooks and sounds run on macOS, Windows and Linux. The menu-bar app is
+> developed on macOS first; it should run elsewhere via Electron, but the tray
+> text and the optional "type into terminal" feature are macOS-tuned.
 
 The overlay is fully click-through (keep working underneath it). The tray menu
 switches modes, toggles visibility, and toggles **“type a message into the

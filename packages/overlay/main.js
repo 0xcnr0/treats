@@ -16,10 +16,11 @@ const { PRAISE, SCOLD, pick } = require("./lib/messages.cjs");
 // process and cache the bindings we need.
 let core = null;
 async function loadCore() {
-  const [ledger, grades, sound] = await Promise.all([
+  const [ledger, grades, sound, animals] = await Promise.all([
     import("@treats/core/ledger"),
     import("@treats/core/grades"),
     import("@treats/core/sound"),
+    import("@treats/core/animals"),
   ]);
   core = {
     append: ledger.append,
@@ -27,7 +28,12 @@ async function loadCore() {
     loadConfig: ledger.loadConfig,
     gradeFor: grades.gradeFor,
     play: sound.play,
+    getAnimal: animals.getAnimal,
   };
+}
+
+function currentAnimal() {
+  return core.getAnimal(core.loadConfig().animal);
 }
 
 let tray = null;
@@ -95,11 +101,11 @@ function trayIcon() {
   return nativeImage.createEmpty();
 }
 
-// Short menu-bar title: signed balance next to the icon (e.g. " +3", " -5").
+// Short menu-bar title: the animal's treat emoji + signed balance.
 function trayTitle() {
   if (!core) return "";
   const { balance } = core.loadLedger();
-  return ` ${balance > 0 ? "+" : ""}${balance}`;
+  return ` ${currentAnimal().treat} ${balance > 0 ? "+" : ""}${balance}`;
 }
 
 function buildMenu() {
@@ -107,13 +113,13 @@ function buildMenu() {
     { label: statusSummary(), enabled: false },
     { type: "separator" },
     {
-      label: "Mode: Toss a Treat 🦴",
+      label: `Mode: Toss a Treat ${core ? currentAnimal().treat : "🦴"}`,
       type: "radio",
       checked: mode === "wand",
       click: () => setMode("wand"),
     },
     {
-      label: "Mode: Bad Dog 🚫",
+      label: `Mode: ${core ? currentAnimal().scold : "Bad dog"} 🚫`,
       type: "radio",
       checked: mode === "whip",
       click: () => setMode("whip"),

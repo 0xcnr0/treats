@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { loadLedger, DATA_DIR } from "./ledger.js";
+import { loadLedger, loadConfig, DATA_DIR } from "./ledger.js";
 import { gradeFor, currentStreak, gpa, dominantTheme } from "./grades.js";
+import { getAnimal } from "./animals.js";
 
 export const REPORTS_DIR = path.join(DATA_DIR, "reports");
 
@@ -70,11 +71,13 @@ export function buildReport() {
   let running = 0;
   const runningSeries = entries.map((e) => (running += e.delta || 0));
 
+  const a = getAnimal(loadConfig().animal);
+
   const lines = [];
-  lines.push("# 🦴 Treats — Training Report Card");
+  lines.push(`# ${a.treat} Treats — ${a.label} Training Report Card`);
   lines.push("");
   lines.push(`**Rank:** ${grade.emoji} ${grade.name}`);
-  lines.push(`**Treats:** ${balance} 🦴`);
+  lines.push(`**Treats:** ${balance} ${a.treat}`);
   lines.push(`**Obedience:** ${score.toFixed(1)} / 4.0`);
   lines.push(
     `**Treats given:** ${rewards}  •  **Scoldings:** ${punishments}  •  **Total feedback:** ${entries.length}`,
@@ -104,7 +107,7 @@ export function buildReport() {
     lines.push("| When | Type | Δ | Reason | Source |");
     lines.push("|---|---|---|---|---|");
     for (const e of entries.slice(-15).reverse()) {
-      const icon = e.type === "reward" ? "🦴 treat" : "🚫 scold";
+      const icon = e.type === "reward" ? `${a.treat} treat` : "🚫 scold";
       const reason = (e.reason || "—").replace(/\|/g, "\\|");
       lines.push(
         `| ${relTime(e.ts)} | ${icon} | ${e.delta > 0 ? "+" : ""}${e.delta} | ${reason} | ${e.source} |`,

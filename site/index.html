@@ -33,7 +33,7 @@
     <main>
       <!-- HERO -->
       <section class="hero">
-        <div class="badge">for Claude Code · macOS</div>
+        <div class="badge">for Claude Code · macOS · Windows · Linux</div>
         <h1>Train your AI<br /><span class="grad">like a puppy.</span></h1>
         <p class="sub">
           <strong>Claude Code</strong> is an AI assistant that writes code for you
@@ -75,7 +75,7 @@
           <div class="step">
             <span>2</span>
             <h3>You react</h3>
-            <p>Happy with it? <code>treats good</code> (or press ⌘⇧G) → a treat 🦴. Not happy? <code>treats bad "no tests"</code> (or ⌘⇧B) → a scolding 🚫.</p>
+            <p>Happy with it? <code>treats good</code> → a treat. Not happy? <code>treats bad "no tests"</code> → a scolding. Or use the menu-bar shortcuts: <b>⌘⇧G</b> / <b>⌘⇧B</b> on Mac, <b>Ctrl+Shift+G</b> / <b>Ctrl+Shift+B</b> on Windows &amp; Linux.</p>
           </div>
           <div class="step">
             <span>3</span>
@@ -95,6 +95,11 @@
           note Claude secretly reads before its next reply.
         </p>
 
+        <div class="animal-picker">
+          <span class="picker-label">Your AI is a:</span>
+          <div id="animalPicker" class="picker-row"></div>
+        </div>
+
         <div class="demo-grid">
           <div class="panel controls">
             <div class="menubar">
@@ -102,10 +107,10 @@
               <span class="mb-balance" id="mbBalance">+0</span>
               <span class="mb-grade" id="mbGrade">Good Pup</span>
             </div>
-            <p class="ctrl-label">Good work — give a treat 🦴</p>
+            <p class="ctrl-label" id="ctrlGood">Good work — give a treat 🦴</p>
             <button class="btn reward" data-type="reward" data-reason="wrote thorough tests">Wrote good tests</button>
             <button class="btn reward" data-type="reward" data-reason="concise, correct fix">Concise, correct fix</button>
-            <p class="ctrl-label">Sloppy work — bad dog 🚫</p>
+            <p class="ctrl-label" id="ctrlBad">Sloppy work — bad 🚫</p>
             <button class="btn punish" data-type="punish" data-reason="skipped writing tests">Skipped the tests</button>
             <button class="btn punish" data-type="punish" data-reason="response was too verbose">Way too verbose</button>
             <button class="btn punish" data-type="punish" data-reason="ignored the lint errors">Ignored the errors</button>
@@ -154,7 +159,7 @@
         <div class="feat-grid">
           <div class="feat"><h3>🧠 It actually sticks</h3><p>Your feedback is shown back to Claude, so rewards and scoldings change how it works — not just how you feel.</p></div>
           <div class="feat"><h3>⌨️ Two-word commands</h3><p><code>treats good</code> · <code>treats bad</code> · <code>treats status</code> · <code>treats report</code>. That's the whole thing.</p></div>
-          <div class="feat"><h3>🦴 Menu-bar app</h3><p>A little bone in your menu bar. Press ⌘⇧G to treat, ⌘⇧B to scold — with a sparkle, a chime, or a "bad dog" thud.</p></div>
+          <div class="feat"><h3>🦴 Menu-bar app</h3><p>A little tray icon. <b>⌘⇧G</b> / <b>Ctrl+Shift+G</b> to treat, <b>⌘⇧B</b> / <b>Ctrl+Shift+B</b> to scold — with a sparkle, a chime, or a thud.</p></div>
           <div class="feat"><h3>🐶 Ranks & report cards</h3><p>Good Pup → Good Boy → Best Boy, or slide down to Bad Dog and the Doghouse. Weekly report cards included.</p></div>
           <div class="feat"><h3>🔒 Private & local</h3><p>Everything lives in a file on your own Mac. No accounts, no servers, no money.</p></div>
           <div class="feat"><h3>↩︎ Forgiving</h3><p>Pressed the wrong button? <code>treats undo</code> takes it right back.</p></div>
@@ -163,22 +168,17 @@
 
       <!-- RANKS -->
       <section class="grades">
-        <h2>The ranks</h2>
+        <h2>The ranks <span id="ranksAnimal" class="ranks-animal"></span></h2>
+        <p class="ranks-sub">Pick a different animal in the demo above to see its ranks.</p>
         <table>
-          <tr><td>20+ treats</td><td>🏆 Best Boy</td></tr>
-          <tr><td>10+</td><td>🌟 Very Good Boy</td></tr>
-          <tr><td>5+</td><td>⭐ Good Boy</td></tr>
-          <tr><td>0+</td><td>🐶 Good Pup</td></tr>
-          <tr><td>-1 to -4</td><td>⚠️ Needs Training</td></tr>
-          <tr><td>-5 or less</td><td>🚫 Bad Dog</td></tr>
-          <tr><td>-10 or less</td><td>⛔ Doghouse</td></tr>
+          <tbody id="ranksBody"></tbody>
         </table>
       </section>
 
       <!-- INSTALL -->
       <section id="install" class="install">
         <h2>Get started</h2>
-        <p class="install-intro">You'll need <a href="https://www.npmjs.com/package/@anthropic-ai/claude-code" target="_blank" rel="noopener">Claude Code</a> and Node.js on a Mac. Then:</p>
+        <p class="install-intro">You'll need <a href="https://www.npmjs.com/package/@anthropic-ai/claude-code" target="_blank" rel="noopener">Claude Code</a> and Node.js. The CLI &amp; hooks run on <b>macOS, Windows and Linux</b>; the menu-bar app is best on macOS. Then:</p>
         <pre class="code"><code>git clone https://github.com/0xcnr0/treats
 cd treats
 npm install
@@ -186,11 +186,14 @@ npm install
 # teach Claude Code to listen (it backs up your settings first)
 node packages/core/bin/treats.js install-hooks
 
-# now train your puppy 🦴
+# pick your animal (dog · cat · dragon · horse · hamster · parrot)
+node packages/core/bin/treats.js animal cat
+
+# now train it
 treats good "wrote thorough tests"
 treats bad  "skipped the edge cases"
 
-# optional: the menu-bar app (⌘⇧G treat · ⌘⇧B bad dog)
+# optional: the menu-bar app (⌘⇧G / Ctrl+Shift+G to treat)
 npm run overlay</code></pre>
         <p class="tip">Start a fresh Claude Code session and ask it how many treats it has. It'll know.</p>
       </section>

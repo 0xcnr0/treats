@@ -6,6 +6,7 @@ import { DATA_DIR, LEDGER_PATH, STATE_PATH, CONFIG_PATH } from "./paths.js";
 const LEDGER_VERSION = 1;
 
 const DEFAULT_CONFIG = {
+  animal: "dog",
   sounds: true,
   injectEveryPrompt: false,
   contextEntries: 5,
@@ -188,6 +189,13 @@ export function ensureConfig() {
     writeJsonAtomic(CONFIG_PATH, DEFAULT_CONFIG);
   }
   return loadConfig();
+}
+
+// Merge a partial config over the current one and persist it.
+export function saveConfig(partial) {
+  const merged = { ...loadConfig(), ...partial };
+  writeJsonAtomic(CONFIG_PATH, merged);
+  return merged;
 }
 
 export { DEFAULT_CONFIG, LEDGER_PATH, DATA_DIR, path };
