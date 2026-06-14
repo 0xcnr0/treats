@@ -22,3 +22,6 @@ npm-debug.log*
 .idea/
 
 # Runtime data lives in ~/.claude-token-economy/ (never in the repo)
+
+# Local Claude Code session transcript (kept out of the public repo)
+sessions/
