@@ -21,9 +21,14 @@ function render() {
   petEl.textContent = state.emoji;
   treatsEl.textContent = `${state.balance > 0 ? "+" : ""}${state.balance} ${state.treat}`;
   rankEl.textContent = state.rank;
-  petWrap.classList.toggle("show-mood", state.tone === "celebratory" || state.tone === "proud");
+  const happy = state.tone === "celebratory" || state.tone === "proud";
+  petWrap.classList.toggle("show-mood", happy);
+  // Mood-based idle: a content wag when doing well, a droop when in trouble.
+  petWrap.classList.toggle("joyful", happy && !asleep);
+  petWrap.classList.toggle("droopy", state.tone === "stern" && !asleep);
 }
 
+let welcomed = false;
 if (window.cte && window.cte.onPetState) {
   window.cte.onPetState((s) => {
     const prev = lastBalance;
@@ -37,6 +42,11 @@ if (window.cte && window.cte.onPetState) {
       else reactSad();
     }
     lastBalance = s.balance;
+    // Friendly hello on first launch.
+    if (!welcomed) {
+      welcomed = true;
+      setTimeout(() => say("Pet me! 🖐️", "happy"), 700);
+    }
   });
 }
 render();
@@ -171,6 +181,7 @@ document.addEventListener("mouseup", () => {
   if (moved) {
     suppressClick = true;
     setTimeout(() => (suppressClick = false), 60);
+    window.cte?.petDragEnd?.(); // remember where the pet was dropped
   }
 });
 petWrap.addEventListener("click", () => {

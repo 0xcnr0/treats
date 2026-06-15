@@ -52,6 +52,12 @@
         transition: filter 0.4s, opacity 0.4s;
       }
       @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+      /* content wag when doing well */
+      #petWrap.joyful #pet { animation: wag 1.1s ease-in-out infinite; }
+      @keyframes wag { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-7px) rotate(5deg)} }
+      /* droopy when in the doghouse */
+      #petWrap.droopy #pet { animation: droop 3.5s ease-in-out infinite; opacity: 0.8; filter: drop-shadow(0 4px 5px rgba(0,0,0,.3)) grayscale(0.3); }
+      @keyframes droop { 0%,100%{transform:translateY(2px) rotate(0)} 50%{transform:translateY(4px) rotate(2deg)} }
       #petWrap.happy #pet { animation: hop 0.5s ease; }
       @keyframes hop {
         0%{transform:translateY(0) scale(1)} 30%{transform:translateY(-22px) scale(1.12,.9)}

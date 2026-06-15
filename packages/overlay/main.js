@@ -53,11 +53,15 @@ function petState() {
 function createPetWindow() {
   const wa = screen.getPrimaryDisplay().workArea;
   const W = 150, H = 150;
+  // Restore the last dragged position, else default to bottom-right.
+  const saved = core.loadConfig().petPos;
+  const x = Array.isArray(saved) ? saved[0] : wa.x + wa.width - W - 24;
+  const y = Array.isArray(saved) ? saved[1] : wa.y + wa.height - H - 24;
   petWin = new BrowserWindow({
     width: W,
     height: H,
-    x: wa.x + wa.width - W - 24,
-    y: wa.y + wa.height - H - 24,
+    x,
+    y,
     transparent: true,
     frame: false,
     hasShadow: false,
@@ -189,6 +193,11 @@ app.whenReady().then(async () => {
   ipcMain.on("pet:dragMove", (_e, { dx, dy }) => {
     if (dragOrigin && petWin && !petWin.isDestroyed()) {
       petWin.setPosition(Math.round(dragOrigin[0] + dx), Math.round(dragOrigin[1] + dy));
+    }
+  });
+  ipcMain.on("pet:dragEnd", () => {
+    if (petWin && !petWin.isDestroyed()) {
+      try { core.saveConfig({ petPos: petWin.getPosition() }); } catch {}
     }
   });
 
