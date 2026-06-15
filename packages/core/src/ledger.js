@@ -88,6 +88,51 @@ export function saveLedger(ledger) {
   writeJsonAtomic(LEDGER_PATH, recompute(ledger));
 }
 
+// Resolve a working directory to a stable "project" key: the nearest git repo
+// root (so several terminals in subdirs of one project share a score), else the
+// directory itself.
+// Canonicalize a path so symlinks (e.g. macOS /tmp → /private/tmp) don't make
+// the same project look like two. Falls back to a plain resolve if realpath
+// fails (path doesn't exist yet).
+function canonical(p) {
+  try {
+    return fs.realpathSync(path.resolve(p));
+  } catch {
+    return path.resolve(p);
+  }
+}
+
+export function projectKeyFor(cwd) {
+  let dir;
+  try {
+    dir = canonical(cwd || process.cwd());
+  } catch {
+    return String(cwd || "");
+  }
+  let d = dir;
+  for (;;) {
+    try {
+      if (fs.existsSync(path.join(d, ".git"))) return d;
+    } catch {
+      /* ignore */
+    }
+    const parent = path.dirname(d);
+    if (parent === d) break;
+    d = parent;
+  }
+  return dir;
+}
+
+// Short, human-friendly name for a project key (its folder name).
+export function projectName(key) {
+  return path.basename(String(key || "")) || String(key || "");
+}
+
+// The project an entry belongs to (older entries only have cwd).
+function entryProject(e) {
+  return e.project || projectKeyFor(e.cwd);
+}
+
 // Append one feedback entry. type is "reward" | "punish"; delta defaults to +/-1.
 export function append({
   type,
@@ -95,12 +140,14 @@ export function append({
   delta,
   sessionId = null,
   cwd = process.cwd(),
+  project,
   source = "cli",
 }) {
   if (type !== "reward" && type !== "punish") {
     throw new Error(`invalid type: ${type}`);
   }
   const ledger = loadLedger();
+  const proj = project || projectKeyFor(cwd);
   const entry = {
     id: crypto.randomUUID(),
     ts: new Date().toISOString(),
@@ -109,21 +156,61 @@ export function append({
     reason: String(reason || "").trim(),
     sessionId,
     cwd,
+    project: proj,
     source,
   };
   ledger.entries.push(entry);
   saveLedger(ledger);
-  return { entry, balance: ledger.balance };
+  return { entry, balance: balanceFor(proj, ledger) };
 }
 
-// Remove and return the most recent entry (undo a misclick / wrong call).
-// Returns { entry, balance } or null if the ledger was empty.
-export function undoLast() {
+// ---- per-project queries ----
+
+export function entriesFor(project, ledger = loadLedger()) {
+  return ledger.entries.filter((e) => entryProject(e) === project);
+}
+
+export function balanceFor(project, ledger = loadLedger()) {
+  return entriesFor(project, ledger).reduce((s, e) => s + (e.delta || 0), 0);
+}
+
+// List every project that has feedback, with its current balance + last activity.
+export function listProjects(ledger = loadLedger()) {
+  const map = new Map();
+  for (const e of ledger.entries) {
+    const p = entryProject(e);
+    const cur = map.get(p) || { project: p, balance: 0, count: 0, lastTs: e.ts };
+    cur.balance += e.delta || 0;
+    cur.count += 1;
+    if (e.ts > cur.lastTs) cur.lastTs = e.ts;
+    map.set(p, cur);
+  }
+  return [...map.values()].sort((a, b) => (a.lastTs < b.lastTs ? 1 : -1));
+}
+
+// Remove and return the most recent entry (optionally within one project).
+// Returns { entry, balance } or null if there was nothing to undo.
+export function undoLast(project = null) {
   const ledger = loadLedger();
-  if (!ledger.entries.length) return null;
-  const entry = ledger.entries.pop();
+  let idx = ledger.entries.length - 1;
+  if (project) {
+    for (idx = ledger.entries.length - 1; idx >= 0; idx--) {
+      if (entryProject(ledger.entries[idx]) === project) break;
+    }
+  }
+  if (idx < 0) return null;
+  const [entry] = ledger.entries.splice(idx, 1);
   saveLedger(ledger);
-  return { entry, balance: ledger.balance };
+  return { entry, balance: project ? balanceFor(project, ledger) : ledger.balance };
+}
+
+// Remove all entries for one project. Returns the number removed.
+export function resetProject(project) {
+  const ledger = loadLedger();
+  const before = ledger.entries.length;
+  ledger.entries = ledger.entries.filter((e) => entryProject(e) !== project);
+  saveLedger(ledger);
+  return before - ledger.entries.length;
 }
 
 // Wipe the entire ledger after backing it up. Returns the backup path (or null

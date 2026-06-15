@@ -1,4 +1,4 @@
-import { loadLedger, loadConfig } from "./ledger.js";
+import { loadConfig, entriesFor, projectKeyFor, projectName } from "./ledger.js";
 import { gradeFor, currentStreak, dominantTheme } from "./grades.js";
 import { getAnimal } from "./animals.js";
 
@@ -20,13 +20,15 @@ function clip(s, n) {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
 
-// Build the compact context string injected into Claude via hooks. Hard-capped
-// at ~450 chars so it never bloats the conversation. Empty string => nothing to
-// inject (caller should emit no output).
-export function buildContext({ entryCount = 5 } = {}) {
-  const ledger = loadLedger();
-  const { entries, balance } = ledger;
+// Build the compact context string injected into Claude via hooks, scoped to the
+// session's project (cwd). Hard-capped at ~450 chars. Empty string => nothing to
+// inject (this project has no feedback yet).
+export function buildContext({ entryCount = 5, cwd } = {}) {
+  const project = projectKeyFor(cwd);
+  const entries = entriesFor(project);
   if (!entries.length) return "";
+  const balance = entries.reduce((s, e) => s + (e.delta || 0), 0);
+  const name = projectName(project);
 
   const grade = gradeFor(balance);
   const recent = entries.slice(-entryCount).reverse();
@@ -63,7 +65,7 @@ export function buildContext({ entryCount = 5 } = {}) {
   }
 
   const text =
-    `[Treats] ${balance} treat(s) — Rank: ${grade.name}. Recent feedback:\n` +
+    `[Treats · ${name}] ${balance} treat(s) — Rank: ${grade.name}. Recent feedback:\n` +
     `${feedback}\n${nudge}`;
 
   return text.length > MAX_LEN ? `${text.slice(0, MAX_LEN - 1)}…` : text;

@@ -115,6 +115,20 @@ You've been a bad dog on 3 of the last 5 tasks; repeated reason: tests. Shape up
 
 Everything lives in `~/.treats/` on your own machine — no accounts, no servers.
 
+## One pet, many projects 📁
+
+Run several Claude Code sessions across different projects at once? Treats scores
+**each project separately** (by its git repo root). So:
+
+- Each Claude session only ever sees **its own project's** standing — project A's
+  score never leaks into project B.
+- The desktop pet **follows the project you're currently working in** (the last
+  session that sent a prompt), and shows its name under the score. Petting it
+  credits *that* project.
+- `treats status` shows the current folder's score; **`treats projects`** lists
+  every project and its rank; `treats reset` clears just this project (or
+  `--all`).
+
 ## The pet, in detail
 
 `npm run pet` opens a small, draggable, always-on-top window with your animal.

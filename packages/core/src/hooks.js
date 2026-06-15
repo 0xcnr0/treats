@@ -1,5 +1,4 @@
-import { loadConfig, loadState, saveState } from "./ledger.js";
-import { loadLedger } from "./ledger.js";
+import { loadConfig, loadState, saveState, entriesFor, projectKeyFor } from "./ledger.js";
 import { buildContext } from "./context.js";
 import { play } from "./sound.js";
 
@@ -14,7 +13,6 @@ function readStdin() {
     process.stdin.setEncoding("utf8");
     process.stdin.on("data", (chunk) => (data += chunk));
     process.stdin.on("end", () => resolve(data));
-    // Safety: if stdin never closes, don't hang the hook forever.
     setTimeout(() => resolve(data), 500).unref?.();
   });
 }
@@ -36,46 +34,62 @@ function emitContext(hookEventName, additionalContext) {
   );
 }
 
-function newestEntryId() {
-  const { entries } = loadLedger();
+// Newest entry id for a given project (for per-project injection dedup).
+function newestEntryIdFor(project) {
+  const entries = entriesFor(project);
   return entries.length ? entries[entries.length - 1].id : null;
 }
 
-// SessionStart: always inject the full summary so Claude starts each session
-// aware of its standing.
-async function sessionStart() {
+// Record which project a session is working in, so the desktop pet can follow
+// the project you're currently active in.
+function markActiveProject(project) {
+  const state = loadState();
+  state.lastActiveProject = project;
+  saveState(state);
+}
+
+// SessionStart: inject this project's standing so Claude starts each session
+// aware of how it's been doing on THIS project.
+async function sessionStart(payload) {
   const config = loadConfig();
-  const ctx = buildContext({ entryCount: config.contextEntries });
+  const project = projectKeyFor(payload.cwd);
+  const ctx = buildContext({ entryCount: config.contextEntries, cwd: payload.cwd });
   emitContext("SessionStart", ctx);
-  // Mark the current newest entry as injected so UserPromptSubmit doesn't
-  // immediately re-inject the same state on the first prompt.
   const state = loadState();
-  state.lastInjectedEntryId = newestEntryId();
+  state.injected = state.injected || {};
+  state.injected[project] = newestEntryIdFor(project);
+  state.lastActiveProject = project;
   saveState(state);
 }
 
-// UserPromptSubmit: only inject when the ledger changed since the last
-// injection (a fresh whip-crack / reward mid-session). Otherwise stay silent so
-// we don't re-spam the context on every prompt.
-async function userPromptSubmit() {
+// UserPromptSubmit: re-inject only when THIS project's score changed since the
+// last injection for it. Keeps each session quiet unless its own score moved.
+async function userPromptSubmit(payload) {
   const config = loadConfig();
+  const project = projectKeyFor(payload.cwd);
   const state = loadState();
-  const newest = newestEntryId();
+  state.injected = state.injected || {};
+  const newest = newestEntryIdFor(project);
 
-  if (!config.injectEveryPrompt && newest === state.lastInjectedEntryId) {
-    return; // nothing new — emit nothing
+  // Always update the active project (cheap) so the pet follows you.
+  state.lastActiveProject = project;
+
+  if (!config.injectEveryPrompt && newest === state.injected[project]) {
+    saveState(state);
+    return; // nothing new for this project
   }
-  const ctx = buildContext({ entryCount: config.contextEntries });
+  const ctx = buildContext({ entryCount: config.contextEntries, cwd: payload.cwd });
   emitContext("UserPromptSubmit", ctx);
-  state.lastInjectedEntryId = newest;
+  state.injected[project] = newest;
   saveState(state);
 }
 
-// Stop: record which session just finished, so the next reward/punish can be
-// attributed to that task. Optionally play a soft cue.
+// Stop: record the finished session + its project for attribution.
 async function stop(payload) {
+  const project = projectKeyFor(payload.cwd);
   const state = loadState();
   state.lastStopSessionId = payload.session_id || null;
+  state.lastActiveProject = project;
   saveState(state);
   if (loadConfig().sounds) play("report");
 }
@@ -93,18 +107,18 @@ export async function runHook(event) {
   try {
     switch (event) {
       case "session-start":
-        await sessionStart();
+        await sessionStart(payload);
         break;
       case "user-prompt-submit":
-        await userPromptSubmit();
+        await userPromptSubmit(payload);
         break;
       case "stop":
         await stop(payload);
         break;
       default:
-        process.stderr.write(`[cte] unknown hook event: ${event}\n`);
+        process.stderr.write(`[treats] unknown hook event: ${event}\n`);
     }
   } catch (err) {
-    process.stderr.write(`[cte] hook error (${event}): ${err.message}\n`);
+    process.stderr.write(`[treats] hook error (${event}): ${err.message}\n`);
   }
 }

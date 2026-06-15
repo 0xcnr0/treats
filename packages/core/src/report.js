@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { loadLedger, loadConfig, DATA_DIR } from "./ledger.js";
+import { loadConfig, DATA_DIR, entriesFor, projectKeyFor, projectName } from "./ledger.js";
 import { gradeFor, currentStreak, gpa, dominantTheme } from "./grades.js";
 import { getAnimal } from "./animals.js";
 
@@ -56,10 +56,11 @@ function teacherComments(entries) {
   return lines;
 }
 
-// Build the full markdown report card.
-export function buildReport() {
-  const ledger = loadLedger();
-  const { entries, balance } = ledger;
+// Build the full markdown report card for one project (defaults to the cwd's).
+export function buildReport({ cwd } = {}) {
+  const project = projectKeyFor(cwd);
+  const entries = entriesFor(project);
+  const balance = entries.reduce((s, e) => s + (e.delta || 0), 0);
   const grade = gradeFor(balance);
   const streak = currentStreak(entries);
   const score = gpa(entries);
@@ -74,7 +75,7 @@ export function buildReport() {
   const a = getAnimal(loadConfig().animal);
 
   const lines = [];
-  lines.push(`# ${a.treat} Treats — ${a.label} Training Report Card`);
+  lines.push(`# ${a.treat} Treats — ${projectName(project)} (${a.label}) Report Card`);
   lines.push("");
   lines.push(`**Rank:** ${grade.emoji} ${grade.name}`);
   lines.push(`**Treats:** ${balance} ${a.treat}`);

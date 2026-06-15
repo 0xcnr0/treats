@@ -87,6 +87,10 @@
         backdrop-filter: blur(4px); white-space: nowrap;
       }
       #label .rank { font-weight: 500; opacity: 0.8; font-size: 10px; }
+      #project {
+        font-size: 9px; color: #aeb4cc; max-width: 130px; overflow: hidden;
+        text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 2px #000;
+      }
 
       #redflash {
         position: absolute; inset: 0; pointer-events: none;
@@ -108,6 +112,7 @@
         <span id="pet">🐶</span>
       </div>
       <div id="label"><span id="treats">0 🦴</span> <span class="rank" id="rank">Good Pup</span></div>
+      <div id="project"></div>
     </div>
     <script src="pet.js"></script>
   </body>

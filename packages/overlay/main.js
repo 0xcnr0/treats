@@ -27,11 +27,26 @@ async function loadCore() {
     loadLedger: ledger.loadLedger,
     loadConfig: ledger.loadConfig,
     saveConfig: ledger.saveConfig,
+    loadState: ledger.loadState,
+    balanceFor: ledger.balanceFor,
+    projectName: ledger.projectName,
+    projectKeyFor: ledger.projectKeyFor,
+    listProjects: ledger.listProjects,
     gradeFor: grades.gradeFor,
     play: sound.play,
     getAnimal: animals.getAnimal,
     ANIMALS: animals.ANIMALS,
   };
+}
+
+// The project the pet currently represents: the last session you were active in,
+// else the most recently scored project, else this app's own folder.
+function activeProject() {
+  const st = core.loadState();
+  if (st.lastActiveProject) return st.lastActiveProject;
+  const all = core.listProjects();
+  if (all.length) return all[0].project;
+  return core.projectKeyFor(process.cwd());
 }
 
 let tray = null;
@@ -44,10 +59,15 @@ function currentAnimal() {
 }
 
 function petState() {
-  const { balance } = core.loadLedger();
+  const project = activeProject();
+  const balance = core.balanceFor(project);
   const g = core.gradeFor(balance);
   const a = currentAnimal();
-  return { emoji: a.emoji, treat: a.treat, voice: a.voice, balance, rank: g.name, tone: g.tone };
+  return {
+    emoji: a.emoji, treat: a.treat, voice: a.voice,
+    balance, rank: g.name, tone: g.tone,
+    project: core.projectName(project),
+  };
 }
 
 function createPetWindow() {
@@ -91,8 +111,10 @@ function broadcast() {
 function give(kind) {
   if (!core) return;
   const reason = kind === "reward" ? "petted 🖐️" : "scolded 🖐️";
+  const project = activeProject();
   try {
-    core.append({ type: kind, reason, source: "overlay-pet" });
+    // Credit the project you're currently working in, not the pet app's folder.
+    core.append({ type: kind, reason, source: "overlay-pet", project, cwd: project });
   } catch {
     /* ledger write failed — still animate */
   }

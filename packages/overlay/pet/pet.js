@@ -17,10 +17,12 @@ let asleep = false;
 let lastActive = Date.now();
 let lastLocalReact = 0;
 
+const projectEl = document.getElementById("project");
 function render() {
   petEl.textContent = state.emoji;
   treatsEl.textContent = `${state.balance > 0 ? "+" : ""}${state.balance} ${state.treat}`;
   rankEl.textContent = state.rank;
+  if (projectEl) projectEl.textContent = state.project ? `📁 ${state.project}` : "";
   const happy = state.tone === "celebratory" || state.tone === "proud";
   petWrap.classList.toggle("show-mood", happy);
   // Mood-based idle: a content wag when doing well, a droop when in trouble.
@@ -29,19 +31,22 @@ function render() {
 }
 
 let welcomed = false;
+let lastProject = null;
 if (window.cte && window.cte.onPetState) {
   window.cte.onPetState((s) => {
     const prev = lastBalance;
+    const sameProject = s.project === lastProject;
     state = { ...state, ...s };
     render();
-    // React to score changes that came from elsewhere (CLI, slash, hotkey),
-    // unless we just animated locally (avoid double).
-    if (prev !== null && s.balance !== prev && Date.now() - lastLocalReact > 600) {
+    // React to score changes within the SAME project (CLI, slash, hotkey),
+    // unless we just animated locally. A project switch isn't a reaction.
+    if (sameProject && prev !== null && s.balance !== prev && Date.now() - lastLocalReact > 600) {
       wake();
       if (s.balance > prev) reactHappy();
       else reactSad();
     }
     lastBalance = s.balance;
+    lastProject = s.project;
     // Friendly hello on first launch.
     if (!welcomed) {
       welcomed = true;
