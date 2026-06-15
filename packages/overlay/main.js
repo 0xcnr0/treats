@@ -86,9 +86,9 @@ function broadcast() {
 // type a message into the focused terminal.
 function give(kind) {
   if (!core) return;
-  const source = kind === "reward" ? "overlay-pet" : "overlay-pet";
+  const reason = kind === "reward" ? "petted 🖐️" : "scolded 🖐️";
   try {
-    core.append({ type: kind, reason: "petted via desktop pet", source });
+    core.append({ type: kind, reason, source: "overlay-pet" });
   } catch {
     /* ledger write failed — still animate */
   }
