@@ -24,6 +24,21 @@
       }
       #stage:hover #hint { opacity: 0.7; }
 
+      /* speech bubble */
+      #bubble {
+        position: absolute; top: 14px; left: 50%; transform: translateX(-50%) scale(0.8);
+        background: #fff; color: #1a1a1a; font-size: 12px; font-weight: 700;
+        padding: 3px 9px; border-radius: 12px; white-space: nowrap; opacity: 0;
+        transition: opacity 0.15s, transform 0.15s; pointer-events: none;
+        box-shadow: 0 3px 10px rgba(0,0,0,.4);
+      }
+      #bubble::after {
+        content: ""; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+        border: 5px solid transparent; border-top-color: #fff; border-bottom: 0;
+      }
+      #bubble.show { opacity: 1; transform: translateX(-50%) scale(1); }
+      #bubble.sad { background: #d7dcf0; }
+
       #petWrap {
         position: relative; width: 86px; height: 86px;
         display: flex; align-items: center; justify-content: center;
@@ -33,7 +48,8 @@
         animation: bob 2.4s ease-in-out infinite;
         will-change: transform;
         filter: drop-shadow(0 6px 6px rgba(0,0,0,0.35));
-        pointer-events: none; /* clicks handled on the wrapper */
+        pointer-events: none;
+        transition: filter 0.4s, opacity 0.4s;
       }
       @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
       #petWrap.happy #pet { animation: hop 0.5s ease; }
@@ -46,6 +62,15 @@
         0%,100%{transform:translateX(0) rotate(0)} 20%{transform:translateX(-7px) rotate(-7deg)}
         40%{transform:translateX(6px) rotate(6deg)} 60%{transform:translateX(-5px) rotate(-5deg)} 80%{transform:translateX(4px) rotate(4deg)}
       }
+      #petWrap.wiggle #pet { animation: wig 0.55s ease; }
+      @keyframes wig { 0%,100%{transform:rotate(0)} 25%{transform:rotate(7deg)} 75%{transform:rotate(-7deg)} }
+
+      /* sleeping */
+      #petWrap.asleep #pet { animation: snooze 4s ease-in-out infinite; opacity: 0.75; filter: drop-shadow(0 4px 5px rgba(0,0,0,.3)) grayscale(0.25); }
+      @keyframes snooze { 0%,100%{transform:translateY(0) rotate(0)} 50%{transform:translateY(-2px) rotate(-4deg)} }
+      #zzz { position: absolute; top: 6px; right: 10px; font-size: 16px; opacity: 0; transition: opacity 0.5s; }
+      #petWrap.asleep #zzz { opacity: 0.9; animation: zfloat 2.2s ease-in-out infinite; }
+      @keyframes zfloat { 0%{transform:translateY(0);opacity:.2} 50%{opacity:.9} 100%{transform:translateY(-10px);opacity:0} }
 
       #mood { position: absolute; top: -2px; right: -2px; font-size: 18px; opacity: 0; transition: opacity 0.3s; }
       #petWrap.show-mood #mood { opacity: 1; }
@@ -70,7 +95,9 @@
     <div id="stage">
       <div id="redflash"></div>
       <div id="hint">click = treat · right-click = scold · drag to move</div>
+      <div id="bubble"></div>
       <div id="petWrap">
+        <span id="zzz">💤</span>
         <span id="mood">✨</span>
         <span id="pet">🐶</span>
       </div>

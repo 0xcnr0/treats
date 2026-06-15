@@ -28,10 +28,13 @@ const SYSTEM = {
   levelUp: SYSTEM_SOUND("Hero"),
 };
 
-// Resolve a sound key to a file: prefer the cross-platform custom .wav, then the
-// macOS system sound, and finally treat the key itself as a literal path.
+// Resolve a sound key to a file: prefer a named custom .wav, then any asset
+// matching the key (e.g. "voice-dog" → assets/voice-dog.wav), then the macOS
+// system sound, and finally treat the key itself as a literal path.
 function resolveSound(key) {
   if (CUSTOM[key] && fs.existsSync(CUSTOM[key])) return CUSTOM[key];
+  const byName = path.join(ASSET_DIR, `${key}.wav`);
+  if (fs.existsSync(byName)) return byName;
   if (PLATFORM === "darwin" && SYSTEM[key]) return SYSTEM[key];
   return CUSTOM[key] || key;
 }

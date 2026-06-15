@@ -47,7 +47,7 @@ function petState() {
   const { balance } = core.loadLedger();
   const g = core.gradeFor(balance);
   const a = currentAnimal();
-  return { emoji: a.emoji, treat: a.treat, balance, rank: g.name, tone: g.tone };
+  return { emoji: a.emoji, treat: a.treat, voice: a.voice, balance, rank: g.name, tone: g.tone };
 }
 
 function createPetWindow() {
@@ -92,8 +92,12 @@ function give(kind) {
   } catch {
     /* ledger write failed — still animate */
   }
-  core.play(kind === "reward" ? "reward" : "punish");
-  if (petWin && !petWin.isDestroyed()) petWin.webContents.send("pet:react", kind);
+  // Cute per-animal voice on a treat; a soft whimper on a scolding.
+  const animalKey = core.loadConfig().animal;
+  core.play(kind === "reward" ? `voice-${animalKey}` : "whimper");
+
+  // The pet animates off the broadcast balance change (single source of truth),
+  // so a mouse pat, a hotkey, the CLI and slash commands all look the same.
   broadcast();
   refreshTray();
 

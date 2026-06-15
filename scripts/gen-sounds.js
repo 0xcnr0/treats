@@ -107,8 +107,105 @@ function levelup() {
   return out;
 }
 
+// --- per-animal stylized vocalizations (cute, not realistic) ---
+const TAU = Math.PI * 2;
+
+// One short "bark" burst: a couple of harmonics with a fast attack/decay + grit.
+function barkBurst(out, start, freq, len, noise) {
+  for (let i = 0; i < len; i++) {
+    const t = i / RATE;
+    const env = Math.min(1, t / 0.006) * Math.exp(-26 * t); // sharp attack, fast decay
+    const v =
+      (Math.sin(TAU * freq * t) +
+        0.5 * Math.sin(TAU * freq * 2 * t) +
+        0.25 * Math.sin(TAU * freq * 3 * t) +
+        0.3 * noise()) *
+      env *
+      0.5;
+    if (start + i < out.length) out[start + i] += v;
+  }
+}
+
+function voiceDog() {
+  const out = new Float32Array(sec(0.5));
+  const n = makeNoise(7);
+  barkBurst(out, 0, 320, sec(0.16), n);
+  barkBurst(out, sec(0.2), 250, sec(0.18), n);
+  return out;
+}
+
+// Pitch-glide vocalization (meow / squeak / neigh share this shape).
+function glide(dur, pts, vol = 0.32, vib = 0) {
+  const out = new Float32Array(sec(dur));
+  let phase = 0;
+  for (let i = 0; i < out.length; i++) {
+    const t = i / out.length; // 0..1
+    // piecewise-linear frequency across control points
+    const seg = t * (pts.length - 1);
+    const a = Math.min(pts.length - 1, Math.floor(seg));
+    const b = Math.min(pts.length - 1, a + 1);
+    let f = pts[a] + (pts[b] - pts[a]) * (seg - a);
+    if (vib) f *= 1 + vib * Math.sin(TAU * 18 * (i / RATE));
+    phase += (TAU * f) / RATE;
+    const env = Math.sin(Math.PI * t); // soft in/out
+    out[i] = (Math.sin(phase) + 0.3 * Math.sin(2 * phase)) * env * vol;
+  }
+  return out;
+}
+
+function voiceCat() { return glide(0.45, [600, 1000, 760, 520], 0.3, 0.02); }
+function voiceHamster() {
+  const a = glide(0.12, [1500, 2000], 0.26);
+  const out = new Float32Array(sec(0.32));
+  a.forEach((v, i) => (out[i] += v));
+  const b = glide(0.12, [1700, 2200], 0.24);
+  b.forEach((v, i) => (out[sec(0.18) + i] += v));
+  return out;
+}
+function voiceHorse() { return glide(0.55, [720, 680, 600, 520, 360, 300], 0.3, 0.08); }
+function voiceParrot() {
+  const out = new Float32Array(sec(0.34));
+  const n = makeNoise(11);
+  for (let i = 0; i < out.length; i++) {
+    const t = i / RATE;
+    const env = Math.sin(Math.PI * (i / out.length));
+    const f = 760 + 220 * Math.sin(TAU * 7 * t);
+    out[i] = (Math.sin(TAU * f * t) * 0.6 + n() * 0.5) * env * 0.3;
+  }
+  return out;
+}
+function voiceDragon() {
+  const out = new Float32Array(sec(0.55));
+  const n = makeNoise(3);
+  for (let i = 0; i < out.length; i++) {
+    const t = i / RATE;
+    const env = Math.sin(Math.PI * (i / out.length));
+    const f = 80 + 30 * t; // low, rising slightly
+    // sawtooth-ish growl
+    const saw = 2 * ((f * t) % 1) - 1;
+    out[i] = (saw * 0.6 + n() * 0.4) * env * 0.42;
+  }
+  return out;
+}
+
+// Soft sad descending tone for scoldings.
+function whimper() {
+  return glide(0.5, [520, 430, 360, 300], 0.22, 0.03);
+}
+
 fs.mkdirSync(OUT_DIR, { recursive: true });
-const targets = { "reward.wav": reward(), "punish.wav": punish(), "levelup.wav": levelup() };
+const targets = {
+  "reward.wav": reward(),
+  "punish.wav": punish(),
+  "levelup.wav": levelup(),
+  "whimper.wav": whimper(),
+  "voice-dog.wav": voiceDog(),
+  "voice-cat.wav": voiceCat(),
+  "voice-dragon.wav": voiceDragon(),
+  "voice-horse.wav": voiceHorse(),
+  "voice-hamster.wav": voiceHamster(),
+  "voice-parrot.wav": voiceParrot(),
+};
 for (const [name, samples] of Object.entries(targets)) {
   const file = path.join(OUT_DIR, name);
   fs.writeFileSync(file, encodeWav(samples));
