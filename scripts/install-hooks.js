@@ -7,10 +7,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CTE_BIN = path.resolve(__dirname, "../packages/core/bin/treats.js");
 
 // Hook events this system installs, mapped to the `treats hook <event>` adapter.
+// `matcher` (optional) limits the hook to certain tools (PostToolUse → Bash).
 const EVENTS = {
-  SessionStart: "session-start",
-  UserPromptSubmit: "user-prompt-submit",
-  Stop: "stop",
+  SessionStart: { event: "session-start" },
+  UserPromptSubmit: { event: "user-prompt-submit" },
+  Stop: { event: "stop" },
+  PostToolUse: { event: "post-tool-use", matcher: "Bash" },
 };
 
 function readSettings() {
@@ -49,9 +51,9 @@ function shq(p) {
   return `'${String(p).replace(/'/g, "'\\''")}'`;
 }
 
-function hookEntry(event) {
+function hookEntry(event, matcher) {
   const node = process.execPath; // absolute node path; hooks run in a bare shell
-  return {
+  const group = {
     hooks: [
       {
         type: "command",
@@ -59,6 +61,8 @@ function hookEntry(event) {
       },
     ],
   };
+  if (matcher) group.matcher = matcher;
+  return group;
 }
 
 export function installHooks() {
@@ -68,13 +72,14 @@ export function installHooks() {
   const added = [];
   const skipped = [];
 
-  for (const [hookName, event] of Object.entries(EVENTS)) {
+  for (const [hookName, spec] of Object.entries(EVENTS)) {
+    const { event, matcher } = spec;
     const arr = (settings.hooks[hookName] = settings.hooks[hookName] || []);
     if (alreadyInstalled(arr, event)) {
       skipped.push(hookName);
       continue;
     }
-    arr.push(hookEntry(event));
+    arr.push(hookEntry(event, matcher));
     added.push(hookName);
   }
 

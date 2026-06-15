@@ -1,4 +1,4 @@
-import { loadConfig, loadState, saveState, entriesFor, projectKeyFor } from "./ledger.js";
+import { loadConfig, loadState, saveState, entriesFor, projectKeyFor, append } from "./ledger.js";
 import { buildContext } from "./context.js";
 import { play } from "./sound.js";
 
@@ -84,6 +84,75 @@ async function userPromptSubmit(payload) {
   saveState(state);
 }
 
+// ---- auto-feedback from real command outcomes (PostToolUse) ----
+
+const TEST_RE = /(\b(npm|yarn|pnpm)\s+(run\s+)?test\b|\bnpx?\s+(jest|vitest)\b|\bjest\b|\bvitest\b|\bpytest\b|\bgo\s+test\b|\bcargo\s+test\b|\bmocha\b|\brspec\b|\bphpunit\b|python\s+-m\s+(unittest|pytest))/i;
+const LINT_RE = /(\beslint\b|\b(npm|yarn|pnpm)\s+(run\s+)?lint\b|\bruff\b|\bflake8\b|\bcargo\s+clippy\b|\bclippy\b|\bgolangci-lint\b|\bbiome\s+(check|lint)\b|\bprettier\b[^\n]*--check)/i;
+const BUILD_RE = /(\b(npm|yarn|pnpm)\s+(run\s+)?(build|typecheck|tsc|check)\b|\btsc\b|\bcargo\s+build\b|\bgo\s+build\b|\bmake\b)/i;
+
+function classify(cmd) {
+  if (TEST_RE.test(cmd)) return "tests";
+  if (LINT_RE.test(cmd)) return "lint";
+  if (BUILD_RE.test(cmd)) return "build";
+  return null;
+}
+
+// Pull a numeric exit code out of the various shapes a tool result can take.
+function exitCodeOf(payload) {
+  const r = payload.tool_result ?? payload.tool_response ?? payload.toolResult ?? {};
+  if (r && typeof r === "object") {
+    for (const k of ["exit_code", "exitCode", "code", "returncode"]) {
+      if (typeof r[k] === "number") return r[k];
+    }
+  }
+  return undefined;
+}
+
+function emitSystemMessage(msg) {
+  process.stdout.write(JSON.stringify({ systemMessage: msg }));
+}
+
+// PostToolUse: when Claude runs tests/lint/build, react to the real result.
+// Default: a clean pass earns a treat (rate-limited per project). A failure only
+// scolds if autoScold is on (failing tests mid-development is normal), but then
+// nudges Claude to fix it.
+async function postToolUse(payload) {
+  if (payload.tool_name !== "Bash") return;
+  const cmd = payload.tool_input?.command || "";
+  const cat = classify(cmd);
+  if (!cat) return;
+  const exit = exitCodeOf(payload);
+  if (exit === undefined) return; // can't judge — stay quiet
+
+  const cfg = loadConfig();
+  const project = projectKeyFor(payload.cwd);
+  const state = loadState();
+  state.auto = state.auto || {};
+  const now = Date.now();
+  const last = state.auto[project] || 0;
+  const cooldown = cfg.autoCooldownMs || 90000;
+
+  if (exit === 0) {
+    if (!cfg.autoTreats) return;
+    if (now - last < cooldown) return; // don't farm treats on repeated runs
+    append({ type: "reward", reason: `${cat} passed ✅ (auto)`, source: "auto", cwd: payload.cwd, project });
+    state.auto[project] = now;
+    saveState(state);
+    if (cfg.sounds) play("reward");
+    return;
+  }
+
+  // failure
+  if (!cfg.autoScold) return; // default: don't punish normal red-test cycles
+  if (now - last >= cooldown) {
+    append({ type: "punish", reason: `${cat} failed ❌ (auto)`, source: "auto", cwd: payload.cwd, project });
+    state.auto[project] = now;
+    saveState(state);
+    if (cfg.sounds) play("punish");
+  }
+  emitSystemMessage(`🐾 Treats: that ${cat} run failed — fix it before you finish to earn a treat.`);
+}
+
 // Stop: record the finished session + its project for attribution.
 async function stop(payload) {
   const project = projectKeyFor(payload.cwd);
@@ -114,6 +183,9 @@ export async function runHook(event) {
         break;
       case "stop":
         await stop(payload);
+        break;
+      case "post-tool-use":
+        await postToolUse(payload);
         break;
       default:
         process.stderr.write(`[treats] unknown hook event: ${event}\n`);

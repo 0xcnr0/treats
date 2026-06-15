@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.3.0 — It makes Claude actually code better
+
+Treats stops being only a toy and starts improving real outcomes:
+
+- **Auto-treats from real results.** A new PostToolUse hook watches when Claude
+  runs your tests / linter / build. A clean pass earns a treat automatically
+  (rate-limited per project). Failures are ignored by default (a red test
+  mid-dev is normal); turn on `autoScold` to make failures cost a treat and nudge
+  Claude to fix them.
+- **Good-habit skills.** Ships `plan-first`, `test-first` and `self-review`
+  skills the AI can auto-invoke, framing better engineering as the way to earn
+  treats.
+- **Per-project scoring** (from the previous drop) means these rewards land on
+  the right project.
+
 ## v0.2.0 — The desktop pet
 
 The headline interaction is no longer typing commands — it's a little animal that

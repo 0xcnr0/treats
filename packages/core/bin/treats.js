@@ -30,6 +30,7 @@ Usage:
   treats install             One-shot: hooks + slash commands + status line
   treats install-hooks       Install hooks into ~/.claude/settings.json
   treats install-commands    Install /treats:* slash commands (~/.claude/commands)
+  treats install-skills      Install good-practice skills (plan/test/self-review)
   treats install-statusline  Show your animal walking in Claude Code's status bar
   treats hook <event>        Internal: Claude Code hook adapter
 
@@ -313,13 +314,21 @@ async function main() {
       installCommands();
       break;
     }
+    case "install-skills": {
+      const { installSkills } = await import("../../../scripts/install-skills.js");
+      installSkills();
+      break;
+    }
     case "install": {
       const { installHooks } = await import("../../../scripts/install-hooks.js");
       const { installCommands } = await import("../../../scripts/install-commands.js");
+      const { installSkills } = await import("../../../scripts/install-skills.js");
       const { installStatusline } = await import("../../../scripts/install-statusline.js");
       installHooks();
       console.log("");
       installCommands();
+      console.log("");
+      installSkills();
       console.log("");
       installStatusline();
       break;

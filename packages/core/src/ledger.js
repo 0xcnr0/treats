@@ -11,6 +11,10 @@ const DEFAULT_CONFIG = {
   injectEveryPrompt: false,
   contextEntries: 5,
   typeIntoTerminal: false,
+  // Auto-feedback from real command outcomes (PostToolUse hook):
+  autoTreats: true, // reward when tests/lint/build pass (rate-limited)
+  autoScold: false, // deduct when they fail (off: failing tests mid-dev is normal)
+  autoCooldownMs: 90000, // min gap between auto-events per project
   thresholds: {
     valedictorian: 20,
     honorRoll: 10,

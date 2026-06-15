@@ -115,6 +115,24 @@ You've been a bad dog on 3 of the last 5 tasks; repeated reason: tests. Shape up
 
 Everything lives in `~/.treats/` on your own machine — no accounts, no servers.
 
+## It rewards good habits on its own 🎓
+
+Beyond your manual pets, Treats nudges the AI toward genuinely better work:
+
+- **Auto-treats from real outcomes.** When Claude runs your tests, linter or build
+  and they **pass**, the pet automatically earns a treat (rate-limited so it can't
+  farm them). So the AI learns: *running tests and keeping them green = treats.*
+  Failing runs are left alone by default (a red test mid-development is normal) —
+  flip on `autoScold` in `~/.treats/config.json` if you want failures to cost a
+  treat and nudge Claude to fix them.
+- **Good-habit skills.** It ships three skills the AI can reach for on its own:
+  **plan-first** (sketch the approach before a multi-file change), **test-first**
+  (cover changes with tests), and **self-review** (re-read the diff before saying
+  "done"). They're framed as ways to *earn treats*, so the carrot points at better
+  engineering.
+
+Both are part of the plugin, or installed by `treats install` from source.
+
 ## One pet, many projects 📁
 
 Run several Claude Code sessions across different projects at once? Treats scores
