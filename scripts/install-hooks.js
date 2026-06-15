@@ -13,6 +13,7 @@ const EVENTS = {
   UserPromptSubmit: { event: "user-prompt-submit" },
   Stop: { event: "stop" },
   PostToolUse: { event: "post-tool-use", matcher: "Bash" },
+  PreToolUse: { event: "pre-tool-use", matcher: "Bash" },
 };
 
 function readSettings() {

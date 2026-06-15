@@ -68,3 +68,22 @@ export function dominantTheme(reasons, minCount = 2) {
   }
   return bestCount >= minCount ? best : null;
 }
+
+// Top recurring content tokens across a set of reasons (count >= minCount).
+export function topThemes(reasons, n = 3, minCount = 2) {
+  const counts = new Map();
+  for (const reason of reasons) {
+    for (const t of String(reason || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((t) => t.length > 2 && !STOPWORDS.has(t))) {
+      counts.set(t, (counts.get(t) || 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .filter(([, c]) => c >= minCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, n)
+    .map(([t]) => t);
+}

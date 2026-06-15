@@ -15,6 +15,7 @@ const DEFAULT_CONFIG = {
   autoTreats: true, // reward when tests/lint/build pass (rate-limited)
   autoScold: false, // deduct when they fail (off: failing tests mid-dev is normal)
   autoCooldownMs: 90000, // min gap between auto-events per project
+  guardDog: false, // block genuinely destructive shell commands (opt-in)
   thresholds: {
     valedictorian: 20,
     honorRoll: 10,

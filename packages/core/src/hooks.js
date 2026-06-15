@@ -53,7 +53,7 @@ function markActiveProject(project) {
 async function sessionStart(payload) {
   const config = loadConfig();
   const project = projectKeyFor(payload.cwd);
-  const ctx = buildContext({ entryCount: config.contextEntries, cwd: payload.cwd });
+  const ctx = buildContext({ entryCount: config.contextEntries, cwd: payload.cwd, includeHouseRules: true });
   emitContext("SessionStart", ctx);
   const state = loadState();
   state.injected = state.injected || {};
@@ -82,6 +82,44 @@ async function userPromptSubmit(payload) {
   emitContext("UserPromptSubmit", ctx);
   state.injected[project] = newest;
   saveState(state);
+}
+
+// ---- guard dog (PreToolUse): block genuinely destructive commands ----
+
+// Each entry: [regex, human reason]. Kept deliberately narrow — only things that
+// destroy work or the machine. Opt-in via config.guardDog.
+const DANGER = [
+  [/\brm\s+-[a-z]*r[a-z]*f|\brm\s+-[a-z]*f[a-z]*r/i, "recursive force-delete"],
+  [/\brm\s+-rf?\s+(\/|~|\$HOME|\*)\s*$/i, "deleting your home or root"],
+  [/\bgit\s+push\b[^\n]*--force(?!-with-lease)/i, "force-push (can erase history)"],
+  [/\bgit\s+push\b[^\n]*\s-f(\s|$)/i, "force-push (can erase history)"],
+  [/\bgit\s+reset\s+--hard\b/i, "hard reset (throws away changes)"],
+  [/\bgit\s+clean\s+-[a-z]*f[a-z]*d|\bgit\s+clean\s+-[a-z]*d[a-z]*f/i, "deleting untracked files"],
+  [/\bchmod\s+-R\s+777\b/i, "world-writable permissions"],
+  [/\b(mkfs|dd\s+if=|>\s*\/dev\/sd)/i, "wiping a disk"],
+  [/:\(\)\s*\{\s*:\|:&\s*\}\s*;:/, "a fork bomb"],
+];
+
+function dangerReason(cmd) {
+  for (const [re, reason] of DANGER) if (re.test(cmd)) return reason;
+  return null;
+}
+
+async function preToolUse(payload) {
+  if (!loadConfig().guardDog) return;
+  if (payload.tool_name !== "Bash") return;
+  const cmd = payload.tool_input?.command || "";
+  const reason = dangerReason(cmd);
+  if (!reason) return;
+  process.stdout.write(
+    JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason: `🐶 Bad dog! Blocked: that command looks like ${reason}. If you really mean it, do it yourself.`,
+      },
+    }),
+  );
 }
 
 // ---- auto-feedback from real command outcomes (PostToolUse) ----
@@ -186,6 +224,9 @@ export async function runHook(event) {
         break;
       case "post-tool-use":
         await postToolUse(payload);
+        break;
+      case "pre-tool-use":
+        await preToolUse(payload);
         break;
       default:
         process.stderr.write(`[treats] unknown hook event: ${event}\n`);

@@ -1,9 +1,49 @@
 import { loadConfig, entriesFor, projectKeyFor, projectName } from "./ledger.js";
-import { gradeFor, currentStreak, dominantTheme } from "./grades.js";
+import { gradeFor, currentStreak, dominantTheme, topThemes } from "./grades.js";
 import { getAnimal } from "./animals.js";
 
-const MAX_LEN = 450;
+const MAX_LEN = 650;
 const REASON_MAX = 60;
+
+// Map a recurring punishment theme to a concrete standing rule.
+const RULE_MAP = {
+  test: "Always write and run tests for changes.",
+  tests: "Always write and run tests for changes.",
+  testing: "Always write and run tests for changes.",
+  lint: "Fix lint and type errors before finishing.",
+  type: "Fix lint and type errors before finishing.",
+  types: "Fix lint and type errors before finishing.",
+  verbose: "Be concise — no rambling.",
+  concise: "Be concise — no rambling.",
+  long: "Be concise — no rambling.",
+  edge: "Handle edge cases.",
+  edge_cases: "Handle edge cases.",
+  error: "Handle errors properly.",
+  errors: "Handle errors properly.",
+  plan: "Plan the approach before coding.",
+  slow: "Work efficiently; don't stall.",
+  comment: "Document non-obvious code.",
+  comments: "Document non-obvious code.",
+};
+
+// Derive standing "house rules" for a project from its recurring scoldings.
+function houseRules(entries) {
+  const themes = topThemes(
+    entries.filter((e) => e.type === "punish").map((e) => e.reason),
+    3,
+    2,
+  );
+  const rules = [];
+  const seen = new Set();
+  for (const t of themes) {
+    const rule = RULE_MAP[t] || `Watch the recurring issue: "${t}".`;
+    if (!seen.has(rule)) {
+      seen.add(rule);
+      rules.push(rule);
+    }
+  }
+  return rules;
+}
 
 function relTime(iso) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -23,7 +63,7 @@ function clip(s, n) {
 // Build the compact context string injected into Claude via hooks, scoped to the
 // session's project (cwd). Hard-capped at ~450 chars. Empty string => nothing to
 // inject (this project has no feedback yet).
-export function buildContext({ entryCount = 5, cwd } = {}) {
+export function buildContext({ entryCount = 5, cwd, includeHouseRules = false } = {}) {
   const project = projectKeyFor(cwd);
   const entries = entriesFor(project);
   if (!entries.length) return "";
@@ -64,9 +104,17 @@ export function buildContext({ entryCount = 5, cwd } = {}) {
     nudge = "Earn treats by being correct, concise and thorough.";
   }
 
-  const text =
+  let text =
     `[Treats · ${name}] ${balance} treat(s) — Rank: ${grade.name}. Recent feedback:\n` +
     `${feedback}\n${nudge}`;
+
+  // At session start, add standing rules learned from this project's scoldings.
+  if (includeHouseRules) {
+    const rules = houseRules(entries);
+    if (rules.length) {
+      text += `\nHouse rules (learned from past scoldings): ${rules.map((r, i) => `${i + 1}) ${r}`).join(" ")}`;
+    }
+  }
 
   return text.length > MAX_LEN ? `${text.slice(0, MAX_LEN - 1)}…` : text;
 }

@@ -40,6 +40,17 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/packages/core/bin/treats.js\" hook pre-tool-use"
+          }
+        ]
+      }
     ]
   }
 }

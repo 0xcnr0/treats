@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.4.0 — Learns, guards, and improves itself
+
+- **Learned house rules.** Recurring scolding reasons for a project become
+  standing rules injected at the start of each session there (scold "no tests" a
+  few times → every session opens with "House rule: always write and run tests").
+- **Guard dog (opt-in).** `guardDog: true` blocks genuinely destructive shell
+  commands (rm -rf /, git push --force, git reset --hard, fork bombs) with a
+  "Bad dog!" via a PreToolUse hook.
+- **Autopilot.** `npm run autopilot [hours]` runs headless Claude Code in a loop
+  that picks tasks from `docs/BACKLOG.md`, implements + verifies + commits them
+  (never pushes) — hands-off project improvement for hours at a time.
+
 ## v0.3.0 — It makes Claude actually code better
 
 Treats stops being only a toy and starts improving real outcomes:

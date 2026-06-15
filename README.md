@@ -130,8 +130,15 @@ Beyond your manual pets, Treats nudges the AI toward genuinely better work:
   (cover changes with tests), and **self-review** (re-read the diff before saying
   "done"). They're framed as ways to *earn treats*, so the carrot points at better
   engineering.
+- **Learned house rules.** The recurring reasons you scold a project for become
+  standing rules injected at the start of every session there — e.g. scold "no
+  tests" a few times and each new session opens with *"House rule: always write
+  and run tests."* The score turns into an actual lesson.
+- **Guard dog (opt-in).** Set `guardDog: true` in `~/.treats/config.json` and
+  genuinely destructive commands (`rm -rf /`, `git push --force`, `git reset
+  --hard`, fork bombs…) get blocked with a *"Bad dog!"* before they run.
 
-Both are part of the plugin, or installed by `treats install` from source.
+All of the above are part of the plugin, or installed by `treats install` from source.
 
 ## One pet, many projects 📁
 
