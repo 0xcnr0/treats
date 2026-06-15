@@ -128,7 +128,8 @@ const TEST_RE = /(\b(npm|yarn|pnpm)\s+(run\s+)?test\b|\bnpx?\s+(jest|vitest)\b|\
 const LINT_RE = /(\beslint\b|\b(npm|yarn|pnpm)\s+(run\s+)?lint\b|\bruff\b|\bflake8\b|\bcargo\s+clippy\b|\bclippy\b|\bgolangci-lint\b|\bbiome\s+(check|lint)\b|\bprettier\b[^\n]*--check)/i;
 const BUILD_RE = /(\b(npm|yarn|pnpm)\s+(run\s+)?(build|typecheck|tsc|check)\b|\btsc\b|\bcargo\s+build\b|\bgo\s+build\b|\bmake\b)/i;
 
-function classify(cmd) {
+// Exported for unit testing (tests/hooks.test.js).
+export function classify(cmd) {
   if (TEST_RE.test(cmd)) return "tests";
   if (LINT_RE.test(cmd)) return "lint";
   if (BUILD_RE.test(cmd)) return "build";

@@ -27,7 +27,8 @@ const RULE_MAP = {
 };
 
 // Derive standing "house rules" for a project from its recurring scoldings.
-function houseRules(entries) {
+// Exported for unit testing (tests/context.test.js).
+export function houseRules(entries) {
   const themes = topThemes(
     entries.filter((e) => e.type === "punish").map((e) => e.reason),
     3,

@@ -8,7 +8,7 @@ Do one at a time; check it off (`- [x]`) when committed. Keep changes focused.
       `grades.js` (gradeFor thresholds, gpa, currentStreak, dominantTheme, topThemes).
 - [x] Unit tests for `ledger.js` projectKeyFor (git-root + realpath), balanceFor,
       undoLast(project), resetProject.
-- [ ] Unit tests for `context.js` (per-project injection, house rules) and the
+- [x] Unit tests for `context.js` (per-project injection, house rules) and the
       PostToolUse classifier in `hooks.js` (test/lint/build regexes).
 - [ ] Add a `test` npm script and run it in CI (.github/workflows/ci.yml).
 
