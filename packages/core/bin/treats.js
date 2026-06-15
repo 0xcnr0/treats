@@ -22,9 +22,11 @@ Usage:
   treats report --archive    Write a date-stamped card to the archive
   treats animal [name]       Show or change your animal (dog, cat, dragon, ...)
   treats statusline          Internal: render the status line (your animal, live)
+  treats install             One-shot: hooks + slash commands + status line
+  treats install-hooks       Install hooks into ~/.claude/settings.json
+  treats install-commands    Install /treats:* slash commands (~/.claude/commands)
   treats install-statusline  Show your animal walking in Claude Code's status bar
   treats hook <event>        Internal: Claude Code hook adapter
-  treats install-hooks       Install hooks into ~/.claude/settings.json
 
 Examples:
   treats good wrote great tests and kept it concise
@@ -269,6 +271,22 @@ async function main() {
     case "install-hooks": {
       const { installHooks } = await import("../../../scripts/install-hooks.js");
       installHooks();
+      break;
+    }
+    case "install-commands": {
+      const { installCommands } = await import("../../../scripts/install-commands.js");
+      installCommands();
+      break;
+    }
+    case "install": {
+      const { installHooks } = await import("../../../scripts/install-hooks.js");
+      const { installCommands } = await import("../../../scripts/install-commands.js");
+      const { installStatusline } = await import("../../../scripts/install-statusline.js");
+      installHooks();
+      console.log("");
+      installCommands();
+      console.log("");
+      installStatusline();
       break;
     }
     case "help":

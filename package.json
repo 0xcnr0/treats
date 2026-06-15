@@ -12,7 +12,9 @@
   },
   "scripts": {
     "treats": "node packages/core/bin/treats.js",
+    "install-all": "node packages/core/bin/treats.js install",
     "install-hooks": "node packages/core/bin/treats.js install-hooks",
+    "install-commands": "node packages/core/bin/treats.js install-commands",
     "install-statusline": "node packages/core/bin/treats.js install-statusline",
     "install-schedule": "node scripts/install-schedule.js",
     "gen-sounds": "node scripts/gen-sounds.js",

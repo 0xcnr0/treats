@@ -66,13 +66,15 @@ Claude sees its running score and recent feedback on the very next message.
 git clone https://github.com/0xcnr0/treats
 cd treats
 npm install
-node packages/core/bin/treats.js install-hooks        # wire the hooks
-node packages/core/bin/treats.js install-statusline    # walking status bar
-npm run overlay                                        # menu-bar app (macOS)
+node packages/core/bin/treats.js install   # hooks + /treats:* commands + status line
+npm run overlay                             # optional menu-bar app (macOS)
 ```
 
-From source you also get a global `treats` CLI and the overlay with global
-hotkeys (⌘⇧G / Ctrl+Shift+G to treat, ⌘⇧B / Ctrl+Shift+B to scold).
+`treats install` is a one-shot that wires the hooks, drops the `/treats:*` slash
+commands into `~/.claude/commands/` (so they work in every session without the
+plugin), and turns on the walking status line. You also get a global `treats`
+CLI and the overlay with global hotkeys (⌘⇧G / Ctrl+Shift+G to treat, ⌘⇧B /
+Ctrl+Shift+B to scold).
 
 ## Pick your animal 🐶🐱🐉🐴🐹🦜
 
