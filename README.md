@@ -4,20 +4,25 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/CLI-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-black)
 
-> **Train Claude Code like a puppy.** Give it a treat 🦴 for good work, a "bad dog" 🚫
-> when it slips — and it actually behaves better next time.
+> **A little pet that lives on your desktop and trains Claude Code.**
+> Pet it with your mouse 🖐️ when Claude does good work, give it a stern look when
+> it slips — and Claude actually behaves better next time.
 >
 > **Live demo → [the website](https://treats-ai.vercel.app)**
 
 ## What is this?
 
 [Claude Code](https://www.npmjs.com/package/@anthropic-ai/claude-code) is an AI
-assistant that writes code for you in the terminal. Sometimes it's brilliant;
-sometimes it gets lazy (skips tests, rambles, ignores errors).
+assistant that writes code for you. Sometimes it's brilliant; sometimes it gets
+lazy (skips tests, rambles, ignores errors).
 
-**Treats** is a tiny tool that sits on top of it. You reward good work and scold
-bad work — and the magic part: **your feedback is fed back into Claude's
-context**, so it remembers and adjusts.
+**Treats** gives you a tiny animal that sits in the corner of your screen. When
+Claude nails it, you **pet the animal with your mouse** (or press one key) and it
+gets a treat 🦴. When Claude slips, you scold it. The cute part is the front; the
+real part is underneath: **your reaction is fed back into Claude's context**, so
+it remembers and adjusts.
+
+> No commands to memorize, no second terminal — just pet the little guy.
 
 - Give a treat → Claude's score goes up.
 - Bad dog → score goes down (low enough and it's in the "doghouse").
@@ -32,49 +37,46 @@ Inspired by the viral whip/wand overlays (**BadClaude / OpenWhip** and
 **GoodClaude**) — but those were pure theater; Claude never knew it got smacked.
 Treats closes the loop: the feedback actually reaches Claude.
 
-## Install (the easy way — Claude Code plugin)
+## The desktop pet (the cute way) 🖐️
 
-In any Claude Code session, run two lines, once:
+A little animal sits in the corner of your screen. **Pet it with your mouse** (or
+press one key) when Claude does well; **right-click to scold** when it doesn't.
+It bounces, throws hearts, and quietly tells Claude how it's doing.
+
+```bash
+git clone https://github.com/0xcnr0/treats
+cd treats
+npm install
+node packages/core/bin/treats.js install   # wire it into Claude Code
+npm run pet                                 # 🐶 your pet appears, bottom-right (macOS)
+```
+
+- **Click / stroke** the pet → a treat (+1) 🦴
+- **Right-click** the pet → bad dog (-1) 🚫
+- **⌘⇧G / Ctrl+Shift+G** and **⌘⇧B / Ctrl+Shift+B** → same, from anywhere (no app focus needed)
+- Drag it wherever you like. Switch animals from the menu-bar icon.
+
+No commands to type, no second terminal — just pet the little guy when you're happy.
+
+## The one-line install (no pet, just the feedback) — Claude Code plugin
+
+Prefer zero setup? In any Claude Code session, run two lines once:
 
 ```
 /plugin marketplace add 0xcnr0/treats
 /plugin install treats
 ```
 
-That's it. You instantly get the slash commands below, the feedback hooks are
-wired automatically (so your reactions reach Claude on its next reply), and you
-can turn on the walking status line. **No clone, no npm, no terminal switching.**
-
-## Use it — right inside the session
+The feedback hooks wire up automatically. You react with optional slash commands
+when you feel like it — no terminal, no clone, no npm:
 
 ```
-/treats:good wrote thorough tests and kept it concise
-/treats:bad  skipped the edge cases
-/treats:status            # treats, rank, last thing it did
-/treats:report            # training report card
-/treats:undo              # take back the last one (misclick)
-/treats:animal cat        # change your animal (dog/cat/dragon/horse/hamster/parrot)
-/treats:statusline        # show your animal walking in the status bar
+/treats:good wrote thorough tests      /treats:bad skipped the edge cases
+/treats:status   /treats:report   /treats:undo   /treats:animal cat   /treats:statusline
 ```
 
-One line, no leaving the prompt. Reward what you like, scold what you don't —
-Claude sees its running score and recent feedback on the very next message.
-
-## Manual install (from source — needed only for the menu-bar overlay)
-
-```bash
-git clone https://github.com/0xcnr0/treats
-cd treats
-npm install
-node packages/core/bin/treats.js install   # hooks + /treats:* commands + status line
-npm run overlay                             # optional menu-bar app (macOS)
-```
-
-`treats install` is a one-shot that wires the hooks, drops the `/treats:*` slash
-commands into `~/.claude/commands/` (so they work in every session without the
-plugin), and turns on the walking status line. You also get a global `treats`
-CLI and the overlay with global hotkeys (⌘⇧G / Ctrl+Shift+G to treat, ⌘⇧B /
-Ctrl+Shift+B to scold).
+(`treats install` from source does the same wiring locally, plus the global
+`treats` CLI and the `/treats:*` commands in `~/.claude/commands/`.)
 
 ## Pick your animal 🐶🐱🐉🐴🐹🦜
 
@@ -113,27 +115,19 @@ You've been a bad dog on 3 of the last 5 tasks; repeated reason: tests. Shape up
 
 Everything lives in `~/.treats/` on your own machine — no accounts, no servers.
 
-## The menu-bar app
+## The pet, in detail
 
-```bash
-npm run overlay
-```
+`npm run pet` opens a small, draggable, always-on-top window with your animal.
+It bobs idly, hops and throws hearts when you pet it, and shrinks/shakes with a
+red flash when scolded. The menu-bar icon shows the score, lets you switch animal,
+and toggles an optional "type a message into the terminal" feature (off by
+default; needs macOS Accessibility permission).
 
-Your animal's treat icon appears in your menu bar with the current score.
-Global shortcuts (Electron maps `CommandOrControl`, so they work cross-platform):
+- **Click / stroke** → treat · **right-click** → scold · **drag** → move it
+- **⌘⇧G / Ctrl+Shift+G**, **⌘⇧B / Ctrl+Shift+B** work from anywhere
 
-- **⌘⇧G** (Mac) / **Ctrl+Shift+G** (Windows·Linux) — give a treat (sparkle + chime, +1)
-- **⌘⇧B** (Mac) / **Ctrl+Shift+B** (Windows·Linux) — bad dog (whip-crack + red flash, -1)
-
-> The CLI, hooks and sounds run on macOS, Windows and Linux. The menu-bar app is
-> developed on macOS first; it should run elsewhere via Electron, but the tray
-> text and the optional "type into terminal" feature are macOS-tuned.
-
-The overlay is fully click-through (keep working underneath it). The tray menu
-switches modes, toggles visibility, and toggles **“type a message into the
-terminal”** (default **off** — needs macOS Accessibility permission; keystrokes
-go to whatever app is focused, so it only types into Claude Code when its
-terminal is in front).
+> The CLI, hooks and sounds run on macOS, Windows and Linux. The pet (Electron)
+> is developed on macOS first; it should run elsewhere too.
 
 ## Ranks
 

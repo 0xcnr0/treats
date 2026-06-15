@@ -34,17 +34,16 @@
       <!-- HERO -->
       <section class="hero">
         <div class="badge">for Claude Code · macOS · Windows · Linux</div>
-        <h1>Train your AI<br /><span class="grad">like a puppy.</span></h1>
+        <h1>A pet that<br /><span class="grad">trains your AI.</span></h1>
         <p class="sub">
-          <strong>Claude Code</strong> is an AI assistant that writes code for you
-          in the terminal. Sometimes it nails it. Sometimes it gets lazy.
-          <strong>Treats</strong> lets you reward the good and correct the bad —
-          type <code>/treats:good</code> for a treat 🦴, <code>/treats:bad</code> for a
-          "bad dog" 🚫, right in the prompt. And here's the part that matters:
-          <strong>it remembers, and it behaves better next time.</strong>
+          <strong>Claude Code</strong> writes code for you — and sometimes gets
+          lazy. <strong>Treats</strong> puts a little animal in the corner of your
+          screen. When Claude does well, you <strong>pet it with your mouse</strong> 🖐️;
+          when it slips, you scold it. The cute part is the front — underneath,
+          your reaction is fed back to Claude, so <strong>it behaves better next time.</strong>
         </p>
         <div class="cta-row">
-          <a class="btn primary" href="#demo">Try the demo ↓</a>
+          <a class="btn primary" href="#demo">Pet it yourself ↓</a>
           <a class="btn" href="https://github.com/0xcnr0/treats" target="_blank" rel="noopener">Get it on GitHub</a>
         </div>
       </section>
@@ -60,7 +59,7 @@
           <div class="qa-item"><b>Where does it come from?</b><span>You give it. You're the trainer; Claude is the puppy. There's no money and nothing to buy — you're just keeping score.</span></div>
           <div class="qa-item"><b>What happens on a "bad dog"?</b><span>One point comes off the score. Nothing is sent anywhere; the number simply goes down. Low enough and your AI lands in the "doghouse."</span></div>
           <div class="qa-item"><b>Why bother?</b><span>Because your score is quietly shown back to Claude every time you ask it something. So it sees "you've been scolded for skipping tests" — and stops skipping tests.</span></div>
-          <div class="qa-item"><b>Do I need to be a programmer?</b><span>To <em>use</em> Claude Code, a little. To use Treats on top of it, no — it's two words in the terminal, or two buttons in the menu bar.</span></div>
+          <div class="qa-item"><b>Do I need to be a programmer?</b><span>To <em>use</em> Claude Code, a little. To use Treats on top of it, no — you mostly just click a cute animal with your mouse.</span></div>
         </div>
       </section>
 
@@ -75,8 +74,8 @@
           </div>
           <div class="step">
             <span>2</span>
-            <h3>You react — in the prompt</h3>
-            <p>Right in the Claude Code box: <code>/treats:good</code> for a treat, <code>/treats:bad no tests</code> for a scolding. One line, no second terminal. (Prefer a hotkey? The menu-bar app adds <b>⌘⇧G</b> / <b>Ctrl+Shift+G</b>.)</p>
+            <h3>You pet (or scold)</h3>
+            <p>Happy? <b>Pet the animal</b> with your mouse 🖐️ (or press ⌘⇧G). Not happy? Right-click to scold (or ⌘⇧B). Prefer typing? <code>/treats:good</code> and <code>/treats:bad</code> work too — but you don't have to.</p>
           </div>
           <div class="step">
             <span>3</span>
@@ -108,13 +107,14 @@
               <span class="mb-balance" id="mbBalance">+0</span>
               <span class="mb-grade" id="mbGrade">Good Pup</span>
             </div>
-            <p class="ctrl-label" id="ctrlGood">Good work — give a treat 🦴</p>
-            <button class="btn reward" data-type="reward" data-reason="wrote thorough tests">Wrote good tests</button>
-            <button class="btn reward" data-type="reward" data-reason="concise, correct fix">Concise, correct fix</button>
-            <p class="ctrl-label" id="ctrlBad">Sloppy work — bad 🚫</p>
-            <button class="btn punish" data-type="punish" data-reason="skipped writing tests">Skipped the tests</button>
-            <button class="btn punish" data-type="punish" data-reason="response was too verbose">Way too verbose</button>
-            <button class="btn punish" data-type="punish" data-reason="ignored the lint errors">Ignored the errors</button>
+            <div class="pet-stage">
+              <div class="demo-pet" id="demoPet" title="Click to pet · right-click to scold">🐶</div>
+              <p class="pet-hint">👆 click to pet · right-click to scold</p>
+            </div>
+            <p class="ctrl-label">…or use the quick buttons:</p>
+            <button class="btn reward" data-type="reward" data-reason="wrote thorough tests">🦴 Good — wrote tests</button>
+            <button class="btn punish" data-type="punish" data-reason="skipped writing tests">🚫 Bad — skipped tests</button>
+            <button class="btn punish" data-type="punish" data-reason="ignored the lint errors">🚫 Bad — ignored errors</button>
             <div class="ctrl-foot">
               <button class="btn ghost" id="undoBtn">↩︎ Undo</button>
               <button class="btn ghost" id="resetBtn">🧹 Reset</button>
@@ -158,6 +158,7 @@
       <section class="features">
         <h2>What you get</h2>
         <div class="feat-grid">
+          <div class="feat"><h3>🖐️ Pet it with your mouse</h3><p>A little animal lives in your screen corner. Click or stroke to treat, right-click to scold, drag it anywhere. No commands to memorize.</p></div>
           <div class="feat"><h3>🧠 It actually sticks</h3><p>Your feedback is shown back to Claude, so rewards and scoldings change how it works — not just how you feel.</p></div>
           <div class="feat"><h3>⌨️ Two-word commands</h3><p><code>treats good</code> · <code>treats bad</code> · <code>treats status</code> · <code>treats report</code>. That's the whole thing.</p></div>
           <div class="feat"><h3>🦴 Menu-bar app</h3><p>A little tray icon. <b>⌘⇧G</b> / <b>Ctrl+Shift+G</b> to treat, <b>⌘⇧B</b> / <b>Ctrl+Shift+B</b> to scold — with a sparkle, a chime, or a thud.</p></div>
@@ -180,23 +181,21 @@
       <!-- INSTALL -->
       <section id="install" class="install">
         <h2>Get started</h2>
-        <p class="install-intro">The easy way — in any <a href="https://www.npmjs.com/package/@anthropic-ai/claude-code" target="_blank" rel="noopener">Claude Code</a> session, run two lines once:</p>
+
+        <h3 class="install-h">🖐️ Want the desktop pet? (macOS)</h3>
+        <p class="install-intro">Four lines, once — then a cute animal you pet with your mouse:</p>
+        <pre class="code"><code>git clone https://github.com/0xcnr0/treats
+cd treats
+npm install
+node packages/core/bin/treats.js install   # wire it into Claude Code
+npm run pet                                 # 🐶 your pet appears, bottom-right</code></pre>
+        <p class="tip">Click / stroke the pet → treat · right-click → scold · drag → move. Or ⌘⇧G / ⌘⇧B from anywhere.</p>
+
+        <h3 class="install-h" style="margin-top:40px">⚡ Just want zero setup? (any OS)</h3>
+        <p class="install-intro">No terminal at all — in any <a href="https://www.npmjs.com/package/@anthropic-ai/claude-code" target="_blank" rel="noopener">Claude Code</a> session, run two lines:</p>
         <pre class="code"><code>/plugin marketplace add 0xcnr0/treats
 /plugin install treats</code></pre>
-        <p class="install-intro" style="margin-top:22px">Then just talk to it — right inside the session, no second terminal:</p>
-        <pre class="code"><code>/treats:good   wrote thorough tests
-/treats:bad    skipped the edge cases
-/treats:status        # treats, rank, last thing it did
-/treats:animal cat    # change your animal
-/treats:statusline    # walking status-bar animal</code></pre>
-        <p class="tip">Hooks are wired automatically — Claude sees its score on the very next message. No clone, no npm, no terminal switching.</p>
-        <details class="from-source">
-          <summary>Prefer the menu-bar app + CLI? Install from source</summary>
-          <pre class="code"><code>git clone https://github.com/0xcnr0/treats &amp;&amp; cd treats
-npm install
-node packages/core/bin/treats.js install-hooks
-npm run overlay   # menu-bar app, ⌘⇧G / Ctrl+Shift+G to treat</code></pre>
-        </details>
+        <p class="tip">No pet window, but the feedback loop works: react with <code>/treats:good</code> · <code>/treats:bad</code> when you feel like it. Hooks wire up automatically.</p>
       </section>
     </main>
 

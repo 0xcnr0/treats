@@ -13,7 +13,7 @@ const { typeIntoFocusedApp } = require("./lib/automation.cjs");
 const { PRAISE, SCOLD, pick } = require("./lib/messages.cjs");
 
 // @treats/core is ESM; load it via dynamic import() from this CommonJS main
-// process and cache the bindings we need.
+// process and cache what we need.
 let core = null;
 async function loadCore() {
   const [ledger, grades, sound, animals] = await Promise.all([
@@ -26,67 +26,129 @@ async function loadCore() {
     append: ledger.append,
     loadLedger: ledger.loadLedger,
     loadConfig: ledger.loadConfig,
+    saveConfig: ledger.saveConfig,
     gradeFor: grades.gradeFor,
     play: sound.play,
     getAnimal: animals.getAnimal,
+    ANIMALS: animals.ANIMALS,
   };
 }
+
+let tray = null;
+let petWin = null;
+let typeIntoTerminal = false; // optional, off by default
+let msgCounter = 0;
 
 function currentAnimal() {
   return core.getAnimal(core.loadConfig().animal);
 }
 
-let tray = null;
-let win = null;
-let overlayEnabled = true;
-let typeIntoTerminal = false; // default OFF for safety (Accessibility + focus risk)
-let mode = "wand"; // "wand" (reward) | "whip" (punish)
-let msgCounter = 0;
+function petState() {
+  const { balance } = core.loadLedger();
+  const g = core.gradeFor(balance);
+  const a = currentAnimal();
+  return { emoji: a.emoji, treat: a.treat, balance, rank: g.name, tone: g.tone };
+}
 
-function createWindow() {
-  const { bounds } = screen.getPrimaryDisplay();
-  win = new BrowserWindow({
-    x: bounds.x,
-    y: bounds.y,
-    width: bounds.width,
-    height: bounds.height,
+function createPetWindow() {
+  const wa = screen.getPrimaryDisplay().workArea;
+  const W = 180, H = 170;
+  petWin = new BrowserWindow({
+    width: W,
+    height: H,
+    x: wa.x + wa.width - W - 24,
+    y: wa.y + wa.height - H - 24,
     transparent: true,
     frame: false,
     hasShadow: false,
     resizable: false,
-    movable: false,
-    focusable: false,
     skipTaskbar: true,
     alwaysOnTop: true,
+    fullscreenable: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+  petWin.setAlwaysOnTop(true, "floating");
+  petWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreenSpaces: true });
+  petWin.loadFile(path.join(__dirname, "pet", "pet.html"));
+  petWin.webContents.once("did-finish-load", () => broadcast());
+}
 
-  win.setAlwaysOnTop(true, "screen-saver");
-  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreenSpaces: true });
-  // Fully click-through, but forward mousemove so the wand/whip can follow the
-  // cursor in the renderer.
-  win.setIgnoreMouseEvents(true, { forward: true });
+function broadcast() {
+  if (petWin && !petWin.isDestroyed()) petWin.webContents.send("pet:state", petState());
+}
 
-  win.loadFile(path.join(__dirname, "renderer", "index.html"));
-  win.webContents.once("did-finish-load", () => {
-    win.webContents.send("mode", mode);
-    win.webContents.send("enabled", overlayEnabled);
-  });
+// Core action: record to the ledger (same atomic writer the CLI uses, so the
+// next hook injects the change), play a sound, animate the pet, and optionally
+// type a message into the focused terminal.
+function give(kind) {
+  if (!core) return;
+  const source = kind === "reward" ? "overlay-pet" : "overlay-pet";
+  try {
+    core.append({ type: kind, reason: "petted via desktop pet", source });
+  } catch {
+    /* ledger write failed — still animate */
+  }
+  core.play(kind === "reward" ? "reward" : "punish");
+  if (petWin && !petWin.isDestroyed()) petWin.webContents.send("pet:react", kind);
+  broadcast();
+  refreshTray();
+
+  if (typeIntoTerminal || core.loadConfig().typeIntoTerminal) {
+    const isReward = kind === "reward";
+    const message = pick(isReward ? PRAISE : SCOLD, msgCounter++);
+    typeIntoFocusedApp(message, { sendInterrupt: !isReward });
+  }
 }
 
 function statusSummary() {
   if (!core) return "Loading…";
-  const { balance } = core.loadLedger();
-  const g = core.gradeFor(balance);
-  return `${g.emoji} ${g.name} — ${balance} treats`;
+  const s = petState();
+  return `${s.emoji} ${s.rank} — ${s.balance} treats`;
 }
 
-// Star template icon (black + alpha; macOS recolors for light/dark menu bars).
-// Falls back to an empty image if the asset is missing.
+function animalMenu() {
+  return Object.entries(core.ANIMALS).map(([key, a]) => ({
+    label: `${a.emoji}  ${a.label}`,
+    type: "radio",
+    checked: core.loadConfig().animal === key,
+    click: () => {
+      core.saveConfig({ animal: key });
+      broadcast();
+      refreshTray();
+    },
+  }));
+}
+
+function buildMenu() {
+  return Menu.buildFromTemplate([
+    { label: statusSummary(), enabled: false },
+    { type: "separator" },
+    { label: "Give a treat  (⌘⇧G)", click: () => give("reward") },
+    { label: "Bad dog  (⌘⇧B)", click: () => give("punish") },
+    { type: "separator" },
+    { label: "Animal", submenu: animalMenu() },
+    {
+      label: "Type messages into terminal (needs Accessibility)",
+      type: "checkbox",
+      checked: typeIntoTerminal,
+      click: (item) => (typeIntoTerminal = item.checked),
+    },
+    { type: "separator" },
+    { label: "Quit", role: "quit" },
+  ]);
+}
+
+function refreshTray() {
+  if (tray) {
+    tray.setContextMenu(buildMenu());
+    tray.setTitle(core ? ` ${currentAnimal().treat} ${petState().balance}` : "");
+  }
+}
+
 function trayIcon() {
   const iconPath = path.join(__dirname, "assets", "trayTemplate.png");
   try {
@@ -101,124 +163,30 @@ function trayIcon() {
   return nativeImage.createEmpty();
 }
 
-// Short menu-bar title: the animal's treat emoji + signed balance.
-function trayTitle() {
-  if (!core) return "";
-  const { balance } = core.loadLedger();
-  return ` ${currentAnimal().treat} ${balance > 0 ? "+" : ""}${balance}`;
-}
-
-function buildMenu() {
-  return Menu.buildFromTemplate([
-    { label: statusSummary(), enabled: false },
-    { type: "separator" },
-    {
-      label: `Mode: Toss a Treat ${core ? currentAnimal().treat : "🦴"}`,
-      type: "radio",
-      checked: mode === "wand",
-      click: () => setMode("wand"),
-    },
-    {
-      label: `Mode: ${core ? currentAnimal().scold : "Bad dog"} 🚫`,
-      type: "radio",
-      checked: mode === "whip",
-      click: () => setMode("whip"),
-    },
-    { type: "separator" },
-    {
-      label: "Overlay visible",
-      type: "checkbox",
-      checked: overlayEnabled,
-      click: (item) => setOverlayEnabled(item.checked),
-    },
-    {
-      label: "Type messages into terminal (needs Accessibility)",
-      type: "checkbox",
-      checked: typeIntoTerminal,
-      click: (item) => (typeIntoTerminal = item.checked),
-    },
-    { type: "separator" },
-    { label: "Give a treat  (⌘⇧G)", click: () => trigger("reward") },
-    { label: "Bad dog  (⌘⇧B)", click: () => trigger("punish") },
-    { type: "separator" },
-    { label: "Quit", role: "quit" },
-  ]);
-}
-
-function refreshTray() {
-  if (tray) tray.setContextMenu(buildMenu());
-}
-
-function setMode(m) {
-  mode = m;
-  if (win) win.webContents.send("mode", mode);
-  refreshTray();
-}
-
-function setOverlayEnabled(on) {
-  overlayEnabled = on;
-  if (win) {
-    if (on) win.showInactive();
-    else win.hide();
-    win.webContents.send("enabled", on);
-  }
-  refreshTray();
-}
-
-// Core action: record to the ledger (same atomic writer the CLI uses, so the
-// next UserPromptSubmit hook injects the change), animate, sound, and optionally
-// type into the focused terminal.
-function trigger(kind) {
-  if (!core) return;
-  const source = kind === "reward" ? "overlay-wand" : "overlay-whip";
-  try {
-    core.append({ type: kind, reason: "via overlay", source });
-  } catch {
-    /* ledger write failed — still animate */
-  }
-  core.play(kind === "reward" ? "reward" : "punish");
-
-  if (win && overlayEnabled) {
-    win.webContents.send("trigger", kind);
-  }
-
-  if (typeIntoTerminal || core.loadConfig().typeIntoTerminal) {
-    const isReward = kind === "reward";
-    const message = pick(isReward ? PRAISE : SCOLD, msgCounter++);
-    typeIntoFocusedApp(message, { sendInterrupt: !isReward });
-  }
-  refreshTray();
-}
-
 app.whenReady().then(async () => {
   await loadCore();
   typeIntoTerminal = !!core.loadConfig().typeIntoTerminal;
 
-  createWindow();
+  createPetWindow();
 
   tray = new Tray(trayIcon());
-  tray.setTitle(trayTitle()); // signed treat count beside the icon
-  tray.setToolTip("Treats — train Claude Code");
+  tray.setToolTip("Treats — pet your AI");
   refreshTray();
 
-  globalShortcut.register("CommandOrControl+Shift+G", () => {
-    setMode("wand");
-    trigger("reward");
-  });
-  globalShortcut.register("CommandOrControl+Shift+B", () => {
-    setMode("whip");
-    trigger("punish");
-  });
+  // Mouse on the pet:
+  ipcMain.on("pet:pat", () => give("reward"));
+  ipcMain.on("pet:scold", () => give("punish"));
 
-  // Keep the tray balance label/menu fresh (the CLI writes from another process).
+  // One-tap keyboard, anywhere:
+  globalShortcut.register("CommandOrControl+Shift+G", () => give("reward"));
+  globalShortcut.register("CommandOrControl+Shift+B", () => give("punish"));
+
+  // Keep the pet + tray fresh when the CLI / hooks write from another process.
   setInterval(() => {
-    if (tray) tray.setTitle(trayTitle());
+    broadcast();
     refreshTray();
-  }, 4000);
+  }, 1500);
 });
 
-ipcMain.on("animation-done", () => {});
-
 app.on("will-quit", () => globalShortcut.unregisterAll());
-// Tray app: keep running with no windows.
-app.on("window-all-closed", () => {});
+app.on("window-all-closed", () => {}); // tray app stays alive

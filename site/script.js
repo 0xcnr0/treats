@@ -119,7 +119,15 @@ function render(action) {
   void ctx.offsetWidth; // reflow to restart animation
   ctx.classList.add("flash");
 
-  $("ctrlGood").textContent = `Good work — give a treat ${ANIMAL.treat}`;
+  const dp = $("demoPet");
+  if (dp) {
+    dp.textContent = ANIMAL.emoji;
+    if (action === "reward" || action === "punish") {
+      dp.classList.remove("hop", "shake");
+      void dp.offsetWidth;
+      dp.classList.add(action === "reward" ? "hop" : "shake");
+    }
+  }
 
   $("rcGrade").textContent = `${g.emoji} ${g.name}`;
   $("rcBalance").textContent = b;
@@ -225,6 +233,38 @@ document.querySelectorAll("[data-type]").forEach((b) =>
 $("undoBtn").addEventListener("click", undo);
 $("resetBtn").addEventListener("click", reset);
 
+// Clickable demo pet — click to pet (treat), right-click to scold.
+const demoPet = $("demoPet");
+if (demoPet) {
+  demoPet.addEventListener("click", () => add("reward", "petted"));
+  demoPet.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    add("punish", "scolded");
+  });
+}
+
 buildPicker();
 renderRanks();
 render("reset");
+
+// Copy buttons on every code block.
+document.querySelectorAll("pre.code").forEach((pre) => {
+  const wrap = document.createElement("div");
+  wrap.className = "code-wrap";
+  pre.parentNode.insertBefore(wrap, pre);
+  wrap.appendChild(pre);
+  const btn = document.createElement("button");
+  btn.className = "copy-btn";
+  btn.textContent = "Copy";
+  wrap.appendChild(btn);
+  btn.addEventListener("click", () => {
+    navigator.clipboard.writeText(pre.innerText.trim()).then(() => {
+      btn.textContent = "Copied ✓";
+      btn.classList.add("done");
+      setTimeout(() => {
+        btn.textContent = "Copy";
+        btn.classList.remove("done");
+      }, 1500);
+    });
+  });
+});

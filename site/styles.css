@@ -253,3 +253,30 @@ footer .fine { font-size: 0.8rem; opacity: 0.7; margin-top: 6px; }
 .from-source summary { cursor: pointer; color: var(--mut); font-size: 0.92rem; }
 .from-source summary:hover { color: var(--ink); }
 .from-source .code { margin-top: 12px; }
+
+/* clickable demo pet */
+.pet-stage { text-align: center; padding: 8px 0 14px; }
+.demo-pet {
+  font-size: 72px; line-height: 1; cursor: pointer; user-select: none;
+  display: inline-block; filter: drop-shadow(0 8px 8px rgba(0,0,0,.4));
+  animation: petbob 2.4s ease-in-out infinite;
+}
+.demo-pet:hover { transform: scale(1.06); }
+@keyframes petbob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+.demo-pet.hop { animation: pethop .5s ease; }
+@keyframes pethop { 0%{transform:translateY(0) scale(1)} 30%{transform:translateY(-26px) scale(1.14,.88)} 60%{transform:translateY(0) scale(.95,1.08)} 100%{transform:translateY(0)} }
+.demo-pet.shake { animation: petshake .45s ease; }
+@keyframes petshake { 0%,100%{transform:translateX(0) rotate(0)} 25%{transform:translateX(-8px) rotate(-8deg)} 50%{transform:translateX(7px) rotate(7deg)} 75%{transform:translateX(-5px) rotate(-5deg)} }
+.pet-hint { color: var(--mut); font-size: 0.78rem; margin: 8px 0 0; }
+
+/* copy button on code blocks */
+.code-wrap { position: relative; }
+.copy-btn {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  background: #1b1e2b; border: 1px solid var(--line); color: var(--mut);
+  border-radius: 8px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer;
+}
+.copy-btn:hover { color: var(--ink); border-color: #3a4158; }
+.copy-btn.done { color: var(--green); border-color: #51d88a55; }
+
+.install-h { font-size: 1.15rem; margin: 0 0 4px; }
