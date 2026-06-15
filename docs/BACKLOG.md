@@ -6,7 +6,7 @@ Do one at a time; check it off (`- [x]`) when committed. Keep changes focused.
 ## Tests & safety
 - [x] Add a tiny zero-dependency test runner (`tests/run.js`) and unit tests for
       `grades.js` (gradeFor thresholds, gpa, currentStreak, dominantTheme, topThemes).
-- [ ] Unit tests for `ledger.js` projectKeyFor (git-root + realpath), balanceFor,
+- [x] Unit tests for `ledger.js` projectKeyFor (git-root + realpath), balanceFor,
       undoLast(project), resetProject.
 - [ ] Unit tests for `context.js` (per-project injection, house rules) and the
       PostToolUse classifier in `hooks.js` (test/lint/build regexes).
