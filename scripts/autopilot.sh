@@ -16,6 +16,10 @@ END=$(( $(date +%s) + HOURS * 3600 ))
 
 command -v claude >/dev/null 2>&1 || { echo "claude CLI not found on PATH."; exit 1; }
 
+# Ctrl-C (or kill) stops the WHOLE loop cleanly, not just one iteration.
+stop() { printf '\n🛑 Autopilot stopped.\n'; exit 0; }
+trap stop INT TERM
+
 echo "🤖 Treats autopilot: working for ${HOURS}h. Log: $LOG"
 echo "   Stop any time with Ctrl-C. Review work with: git -C \"$ROOT\" log --oneline"
 : > "$LOG"
@@ -27,11 +31,15 @@ while [ "$(date +%s)" -lt "$END" ]; do
   printf '\n=== iteration %s · %sm left · %s ===\n' "$i" "$remain" "$(date '+%H:%M:%S')" | tee -a "$LOG"
 
   claude -p "$(cat "$ROOT/scripts/autopilot-prompt.md")" \
-    --dangerously-skip-permissions >> "$LOG" 2>&1 \
-    || echo "   (iteration $i exited non-zero — continuing)" | tee -a "$LOG"
+    --dangerously-skip-permissions >> "$LOG" 2>&1
+  rc=$?
+  # 130 = Ctrl-C (SIGINT), 143 = SIGTERM — the user wants to stop the whole loop.
+  if [ "$rc" -eq 130 ] || [ "$rc" -eq 143 ]; then stop; fi
+  [ "$rc" -ne 0 ] && echo "   (iteration $i exited $rc — continuing)" | tee -a "$LOG"
 
   git -C "$ROOT" log --oneline -1 2>/dev/null | sed 's/^/   last commit: /' | tee -a "$LOG"
-  sleep 10
+  # Interruptible pause (Ctrl-C during the wait stops cleanly via the trap).
+  sleep 10 || stop
 done
 
 echo "✅ Autopilot finished after ${HOURS}h."
