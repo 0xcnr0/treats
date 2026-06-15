@@ -21,6 +21,8 @@ jobs:
           for f in packages/core/src/*.js packages/core/bin/*.js scripts/*.js; do
             node --check "$f"
           done
+      - name: Run unit tests
+        run: npm test
       - name: Generate assets (sounds + icons)
         run: npm run gen-assets
       - name: Smoke-test the CLI feedback loop

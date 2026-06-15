@@ -10,7 +10,7 @@ Do one at a time; check it off (`- [x]`) when committed. Keep changes focused.
       undoLast(project), resetProject.
 - [x] Unit tests for `context.js` (per-project injection, house rules) and the
       PostToolUse classifier in `hooks.js` (test/lint/build regexes).
-- [ ] Add a `test` npm script and run it in CI (.github/workflows/ci.yml).
+- [x] Add a `test` npm script and run it in CI (.github/workflows/ci.yml).
 
 ## CLI
 - [ ] `treats config` — view and set config flags (animal, sounds, autoTreats,
