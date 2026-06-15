@@ -13,7 +13,7 @@ Do one at a time; check it off (`- [x]`) when committed. Keep changes focused.
 - [x] Add a `test` npm script and run it in CI (.github/workflows/ci.yml).
 
 ## CLI
-- [ ] `treats config` — view and set config flags (animal, sounds, autoTreats,
+- [x] `treats config` — view and set config flags (animal, sounds, autoTreats,
       autoScold, guardDog) without hand-editing JSON.
 - [ ] `treats stats` — totals across all projects (treats given, scoldings, top
       rank, busiest project).

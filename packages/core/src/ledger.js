@@ -290,4 +290,31 @@ export function saveConfig(partial) {
   return merged;
 }
 
+// User-facing flags settable via `treats config` (so people don't hand-edit
+// JSON). Each has a type and a one-line description. `animal` is also settable
+// via `treats animal`.
+export const CONFIG_FLAGS = {
+  animal: { type: "string", desc: "Which animal represents your AI (dog, cat, dragon, ...)" },
+  sounds: { type: "bool", desc: "Play sounds on treats and scoldings" },
+  autoTreats: { type: "bool", desc: "Auto-reward when tests/lint/build pass" },
+  autoScold: { type: "bool", desc: "Auto-deduct when tests/lint/build fail" },
+  guardDog: { type: "bool", desc: "Block genuinely destructive shell commands (opt-in)" },
+};
+
+// Coerce a CLI string into the typed value for a known config flag.
+// Returns { value } on success or { error } with a friendly message.
+export function coerceConfigValue(key, raw) {
+  const flag = CONFIG_FLAGS[key];
+  if (!flag) return { error: `Unknown config key: ${key}` };
+  if (flag.type === "bool") {
+    const v = String(raw).trim().toLowerCase();
+    if (["true", "on", "yes", "1"].includes(v)) return { value: true };
+    if (["false", "off", "no", "0"].includes(v)) return { value: false };
+    return { error: `${key} expects true/false (got "${raw}")` };
+  }
+  const v = String(raw).trim();
+  if (!v) return { error: `${key} expects a value` };
+  return { value: v };
+}
+
 export { DEFAULT_CONFIG, LEDGER_PATH, DATA_DIR, path };

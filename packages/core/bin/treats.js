@@ -3,6 +3,7 @@ import fs from "node:fs";
 import {
   append, undoLast, resetLedger, resetProject, loadState, loadConfig, saveConfig, ensureConfig,
   entriesFor, balanceFor, projectKeyFor, projectName, listProjects,
+  CONFIG_FLAGS, coerceConfigValue,
 } from "../src/ledger.js";
 import { gradeFor, currentStreak, gpa } from "../src/grades.js";
 import { buildReport, archiveReport } from "../src/report.js";
@@ -26,6 +27,7 @@ Usage:
   treats report [--out FILE] Print (or write) this project's report card
   treats report --archive    Write a date-stamped card to the archive
   treats animal [name]       Show or change your animal (dog, cat, dragon, ...)
+  treats config [key [val]]  View or change settings (sounds, autoTreats, ...)
   treats statusline          Internal: render the status line (your animal, live)
   treats install             One-shot: hooks + slash commands + status line
   treats install-hooks       Install hooks into ~/.claude/settings.json
@@ -92,6 +94,49 @@ function cmdAnimal(args) {
   const a = getAnimal(key);
   console.log(`${a.emoji} Your AI is now a ${a.label}. Treats look like ${a.treat}.`);
   console.log(`   Current rank (${projectName(here())}): ${rankLine(balanceFor(here()))}`);
+}
+
+function cmdConfig(args) {
+  const [key, ...rest] = args;
+  const cfg = loadConfig();
+
+  // No key: list every settable flag, its current value and what it does.
+  if (!key) {
+    console.log("Settings (change with:  treats config <key> <value>)\n");
+    for (const [k, flag] of Object.entries(CONFIG_FLAGS)) {
+      console.log(`  ${k.padEnd(11)} ${String(cfg[k]).padEnd(7)} ${flag.desc}`);
+    }
+    return;
+  }
+
+  if (!CONFIG_FLAGS[key]) {
+    console.error(`Unknown setting: ${key}`);
+    console.log("Settable: " + Object.keys(CONFIG_FLAGS).join(", "));
+    process.exitCode = 1;
+    return;
+  }
+
+  // Key only: show that one value.
+  if (!rest.length) {
+    console.log(`${key} = ${String(cfg[key])}`);
+    console.log(`   ${CONFIG_FLAGS[key].desc}`);
+    return;
+  }
+
+  // animal has its own validation + friendly output; reuse it.
+  if (key === "animal") {
+    cmdAnimal([rest[0]]);
+    return;
+  }
+
+  const { value, error } = coerceConfigValue(key, rest.join(" "));
+  if (error) {
+    console.error(error);
+    process.exitCode = 1;
+    return;
+  }
+  saveConfig({ [key]: value });
+  console.log(`✅ ${key} = ${value}`);
 }
 
 function cmdUndo() {
@@ -292,6 +337,9 @@ async function main() {
       break;
     case "animal":
       cmdAnimal(args);
+      break;
+    case "config":
+      cmdConfig(args);
       break;
     case "statusline":
       await cmdStatusline(args);
