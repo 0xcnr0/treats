@@ -3,7 +3,7 @@ import fs from "node:fs";
 import {
   append, undoLast, resetLedger, resetProject, loadState, loadConfig, saveConfig, ensureConfig,
   entriesFor, balanceFor, projectKeyFor, projectName, listProjects, globalStats,
-  CONFIG_FLAGS, coerceConfigValue,
+  CONFIG_FLAGS, coerceConfigValue, animalKeyFor, configFor, setProjectAnimal,
 } from "../src/ledger.js";
 import { gradeFor, currentStreak, gpa } from "../src/grades.js";
 import { buildReport, archiveReport } from "../src/report.js";
@@ -11,8 +11,9 @@ import { play, speak } from "../src/sound.js";
 import { runHook } from "../src/hooks.js";
 import { ANIMALS, getAnimal, animalKeys } from "../src/animals.js";
 
-const animal = () => getAnimal(loadConfig().animal);
 const here = () => projectKeyFor(process.cwd());
+const animalFor = (project) => getAnimal(animalKeyFor(project));
+const animal = () => animalFor(here());
 
 function usage() {
   return `treats — train Claude Code like a puppy 🦴
@@ -27,7 +28,7 @@ Usage:
   treats stats [--json]      Totals across all projects (treats, scoldings, ...)
   treats report [--out FILE] Print (or write) this project's report card
   treats report --archive    Archive a date-stamped card for every project
-  treats animal [name]       Show or change your animal (dog, cat, dragon, ...)
+  treats animal [name] [--here]  Show/change your animal (--here: this project only)
   treats config [key [val]]  View or change settings (sounds, autoTreats, ...)
   treats statusline          Internal: render the status line (your animal, live)
   treats install             One-shot: hooks + slash commands + status line
@@ -46,8 +47,10 @@ Aliases: 'reward' = good, 'punish' = bad.
 `;
 }
 
-function rankLine(balance) {
-  const g = gradeFor(balance);
+// Rank label for a balance. Pass a project key to use that project's animal;
+// omit it (e.g. for cross-project aggregates) to use the global animal.
+function rankLine(balance, project = null) {
+  const g = gradeFor(balance, project ? configFor(project) : loadConfig());
   return `${g.emoji} ${g.name}`;
 }
 
@@ -57,7 +60,7 @@ function cmdReward(args) {
   const sessionId = loadState().lastStopSessionId || null;
   const { balance } = append({ type: "reward", reason, sessionId });
   play("reward");
-  console.log(`${a.treat} ${a.give} (+1) · ${projectName(here())}. Treats: ${balance} — ${rankLine(balance)}`);
+  console.log(`${a.treat} ${a.give} (+1) · ${projectName(here())}. Treats: ${balance} — ${rankLine(balance, here())}`);
   if (reason) console.log(`   For: ${reason}`);
 }
 
@@ -67,7 +70,7 @@ function cmdPunish(args) {
   const sessionId = loadState().lastStopSessionId || null;
   const { balance } = append({ type: "punish", reason, sessionId });
   play("punish");
-  const grade = gradeFor(balance);
+  const grade = gradeFor(balance, configFor(here()));
   console.log(`🚫 ${a.scold} (-1) · ${projectName(here())}. Treats: ${balance} — ${grade.emoji} ${grade.name}`);
   if (reason) console.log(`   For: ${reason}`);
   if (grade.tone === "warning" || grade.tone === "stern") {
@@ -77,24 +80,44 @@ function cmdPunish(args) {
 
 function cmdAnimal(args) {
   const cfg = loadConfig();
-  const key = args[0];
+  const project = here();
+  const local = args.includes("--here");
+  const key = args.find((a) => !a.startsWith("--"));
+
   if (!key) {
-    const cur = getAnimal(cfg.animal);
-    console.log(`Current animal: ${cur.emoji} ${cur.label} (treat: ${cur.treat})`);
+    const cur = getAnimal(animalKeyFor(project, cfg));
+    const override = (cfg.projectAnimals || {})[project];
+    const scope = override ? `set for ${projectName(project)}` : "global default";
+    console.log(`Current animal: ${cur.emoji} ${cur.label} (treat: ${cur.treat}) — ${scope}`);
     console.log("Available: " + animalKeys().map((k) => `${ANIMALS[k].emoji} ${k}`).join("  "));
-    console.log("Change it with:  treats animal <name>");
+    console.log("Change it with:  treats animal <name>          (everywhere)");
+    console.log("            or:  treats animal <name> --here   (this project only)");
     return;
   }
+
+  // `--here default` (or global/none/reset) clears the per-project override.
+  if (local && ["default", "global", "none", "reset"].includes(key.toLowerCase())) {
+    setProjectAnimal(project, null);
+    const a = animalFor(project);
+    console.log(`↩️  ${projectName(project)} now uses the global animal: ${a.emoji} ${a.label}.`);
+    return;
+  }
+
   if (!ANIMALS[key]) {
     console.error(`Unknown animal: ${key}`);
     console.log("Available: " + animalKeys().join(", "));
     process.exitCode = 1;
     return;
   }
-  saveConfig({ animal: key });
   const a = getAnimal(key);
-  console.log(`${a.emoji} Your AI is now a ${a.label}. Treats look like ${a.treat}.`);
-  console.log(`   Current rank (${projectName(here())}): ${rankLine(balanceFor(here()))}`);
+  if (local) {
+    setProjectAnimal(project, key);
+    console.log(`${a.emoji} ${projectName(project)} is now a ${a.label}. Treats look like ${a.treat}.`);
+  } else {
+    saveConfig({ animal: key });
+    console.log(`${a.emoji} Your AI is now a ${a.label}. Treats look like ${a.treat}.`);
+  }
+  console.log(`   Current rank (${projectName(project)}): ${rankLine(balanceFor(project), project)}`);
 }
 
 function cmdConfig(args) {
@@ -192,7 +215,7 @@ function cmdUndo(args = []) {
   const { entry, balance } = result;
   const mark = entry.type === "reward" ? "treat (+1)" : "scolding (-1)";
   play("report");
-  console.log(`↩️  Took back the last ${mark} · ${projectName(project)}. Treats: ${balance} — ${rankLine(balance)}`);
+  console.log(`↩️  Took back the last ${mark} · ${projectName(project)}. Treats: ${balance} — ${rankLine(balance, project)}`);
   if (entry.reason) console.log(`   Removed: ${entry.reason}`);
 }
 
@@ -200,7 +223,7 @@ function cmdStatus(args) {
   const project = here();
   const entries = entriesFor(project);
   const balance = entries.reduce((s, e) => s + (e.delta || 0), 0);
-  const grade = gradeFor(balance);
+  const grade = gradeFor(balance, configFor(project));
   const streak = currentStreak(entries);
   const last = entries[entries.length - 1];
 
@@ -242,7 +265,7 @@ function cmdProjects(args = []) {
         all.map((p) => ({
           project: projectName(p.project),
           balance: p.balance,
-          rank: gradeFor(p.balance).name,
+          rank: gradeFor(p.balance, configFor(p.project)).name,
           count: p.count,
           lastTs: p.lastTs,
         })),
@@ -257,7 +280,7 @@ function cmdProjects(args = []) {
   }
   console.log("Projects by recent activity:");
   for (const p of all) {
-    const g = gradeFor(p.balance);
+    const g = gradeFor(p.balance, configFor(p.project));
     console.log(`  ${g.emoji} ${String(p.balance).padStart(3)}  ${projectName(p.project).padEnd(22)} ${g.name}`);
   }
 }
@@ -294,7 +317,7 @@ function cmdStats(args) {
   console.log(`  🚫 Scoldings:     ${s.scoldings}`);
   console.log(`  📊 Net balance:   ${s.net > 0 ? "+" : ""}${s.net}  ${rankLine(s.net)}`);
   if (s.topRanked) {
-    const g = gradeFor(s.topRanked.balance);
+    const g = gradeFor(s.topRanked.balance, configFor(s.topRanked.project));
     const sign = s.topRanked.balance > 0 ? "+" : "";
     console.log(`  🏆 Top project:   ${projectName(s.topRanked.project)} (${sign}${s.topRanked.balance}, ${g.emoji} ${g.name})`);
   }
@@ -375,11 +398,12 @@ async function cmdStatusline(args) {
       /* ignore */
     }
   }
-  const a = animal();
   // Scope the status line to this session's project.
   const cwd = info?.workspace?.current_dir || info?.cwd || process.cwd();
-  const balance = balanceFor(projectKeyFor(cwd));
-  const g = gradeFor(balance);
+  const project = projectKeyFor(cwd);
+  const a = animalFor(project);
+  const balance = balanceFor(project);
+  const g = gradeFor(balance, configFor(project));
 
   // Ping-pong walk across a small track, stepped from the wall clock (or --frame).
   const TRACK = 5;

@@ -7,6 +7,7 @@ const LEDGER_VERSION = 1;
 
 const DEFAULT_CONFIG = {
   animal: "dog",
+  projectAnimals: {}, // per-project overrides: { "<project key>": "<animal>" }
   sounds: true,
   injectEveryPrompt: false,
   contextEntries: 5,
@@ -304,6 +305,7 @@ export function loadConfig() {
       ...DEFAULT_CONFIG,
       ...parsed,
       thresholds: { ...DEFAULT_CONFIG.thresholds, ...(parsed.thresholds || {}) },
+      projectAnimals: { ...DEFAULT_CONFIG.projectAnimals, ...(parsed.projectAnimals || {}) },
     };
   } catch {
     return { ...DEFAULT_CONFIG };
@@ -322,6 +324,28 @@ export function saveConfig(partial) {
   const merged = { ...loadConfig(), ...partial };
   writeJsonAtomic(CONFIG_PATH, merged);
   return merged;
+}
+
+// Resolve the effective animal key for a project: a per-project override (set
+// via `treats animal <name> --here`) wins over the global `animal`.
+export function animalKeyFor(project, cfg = loadConfig()) {
+  const overrides = cfg.projectAnimals || {};
+  return (project && overrides[project]) || cfg.animal;
+}
+
+// A config view with `animal` resolved to this project's effective animal, so
+// gradeFor()/getAnimal() callers can stay project-aware without extra plumbing.
+export function configFor(project, cfg = loadConfig()) {
+  return { ...cfg, animal: animalKeyFor(project, cfg) };
+}
+
+// Set (or, with a falsy key, clear) a project's animal override and persist it.
+export function setProjectAnimal(project, key) {
+  const cfg = loadConfig();
+  const overrides = { ...(cfg.projectAnimals || {}) };
+  if (key) overrides[project] = key;
+  else delete overrides[project];
+  return saveConfig({ projectAnimals: overrides });
 }
 
 // User-facing flags settable via `treats config` (so people don't hand-edit

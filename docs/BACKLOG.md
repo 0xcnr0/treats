@@ -23,7 +23,8 @@ Do one at a time; check it off (`- [x]`) when committed. Keep changes focused.
 ## Pet & UX
 - [x] More animals (fox 🦊, panda 🐼, frog 🐸, penguin 🐧) with ranks + voices.
 - [x] A small "double-click to open the report card" on the pet.
-- [ ] Remember the chosen animal per project (optional), not just globally.
+- [x] Remember the chosen animal per project (optional), not just globally.
+      (`treats animal <name> --here`; `--here default` clears it.)
 - [ ] Pet "thinking" pose while Claude is actively working (if detectable).
 
 ## Docs & site

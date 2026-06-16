@@ -19,6 +19,8 @@ import {
   entriesFor,
   listProjects,
   globalStats,
+  animalKeyFor,
+  configFor,
 } from "../packages/core/src/ledger.js";
 
 // A synthetic ledger: explicit `project` fields mean entryProject() never has
@@ -96,6 +98,31 @@ test("globalStats: empty ledger has zeroed totals and no winners", () => {
   eq(s.projectCount, 0);
   eq(s.topRanked, null);
   eq(s.busiest, null);
+});
+
+// --- animalKeyFor / configFor (per-project animal overrides) ---------------
+
+// Both take an explicit cfg, so they're pure (no ~/.treats access).
+const cfgAnimals = { animal: "dog", projectAnimals: { "/proj/cat": "cat" } };
+
+test("animalKeyFor: a per-project override wins over the global animal", () => {
+  eq(animalKeyFor("/proj/cat", cfgAnimals), "cat");
+});
+
+test("animalKeyFor: projects without an override fall back to global", () => {
+  eq(animalKeyFor("/proj/other", cfgAnimals), "dog");
+});
+
+test("animalKeyFor: a missing projectAnimals map is tolerated", () => {
+  eq(animalKeyFor("/proj/x", { animal: "dragon" }), "dragon");
+  eq(animalKeyFor(null, cfgAnimals), "dog");
+});
+
+test("configFor: returns a cfg view with animal resolved for the project", () => {
+  eq(configFor("/proj/cat", cfgAnimals).animal, "cat");
+  eq(configFor("/proj/other", cfgAnimals).animal, "dog");
+  // The rest of the config is preserved.
+  eq(configFor("/proj/cat", { ...cfgAnimals, sounds: false }).sounds, false);
 });
 
 // --- projectName -----------------------------------------------------------

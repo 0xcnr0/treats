@@ -1,4 +1,4 @@
-import { loadConfig, entriesFor, projectKeyFor, projectName } from "./ledger.js";
+import { configFor, entriesFor, projectKeyFor, projectName } from "./ledger.js";
 import { gradeFor, currentStreak, dominantTheme, topThemes } from "./grades.js";
 import { getAnimal } from "./animals.js";
 
@@ -70,8 +70,9 @@ export function buildContext({ entryCount = 5, cwd, includeHouseRules = false } 
   if (!entries.length) return "";
   const balance = entries.reduce((s, e) => s + (e.delta || 0), 0);
   const name = projectName(project);
+  const cfg = configFor(project);
 
-  const grade = gradeFor(balance);
+  const grade = gradeFor(balance, cfg);
   const recent = entries.slice(-entryCount).reverse();
 
   const feedback = recent
@@ -90,7 +91,7 @@ export function buildContext({ entryCount = 5, cwd, includeHouseRules = false } 
   );
   const streak = currentStreak(entries);
 
-  const animal = getAnimal(loadConfig().animal);
+  const animal = getAnimal(cfg.animal);
 
   let nudge;
   if (grade.tone === "stern") {

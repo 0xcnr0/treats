@@ -92,6 +92,10 @@ re-themes — emojis, ranks and phrasing follow. A cat climbs from *Fine Feline*
 to *Top Cat* (or lands at the *Spray Bottle*); a dragon grows its hoard from
 *Hatchling* to *Elder Wyrm*. Try them live on the [website](https://treats-ai.vercel.app).
 
+Want a different animal for one repo? `treats animal cat --here` sets it for the
+current project only, leaving the global default alone. `treats animal default
+--here` reverts that project to the global animal.
+
 ## How it actually works (the feedback loop)
 
 `treats install-hooks` adds three [Claude Code hooks](https://docs.anthropic.com/en/docs/claude-code/hooks)

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { loadConfig, DATA_DIR, entriesFor, projectKeyFor, projectName, listProjects } from "./ledger.js";
+import { configFor, DATA_DIR, entriesFor, projectKeyFor, projectName, listProjects } from "./ledger.js";
 import { gradeFor, currentStreak, gpa, dominantTheme } from "./grades.js";
 import { getAnimal } from "./animals.js";
 
@@ -61,9 +61,10 @@ function teacherComments(entries) {
 // `project` key, or a `cwd` to resolve one (defaults to the current dir).
 export function buildReport({ cwd, project: projectKey } = {}) {
   const project = projectKey || projectKeyFor(cwd);
+  const cfg = configFor(project);
   const entries = entriesFor(project);
   const balance = entries.reduce((s, e) => s + (e.delta || 0), 0);
-  const grade = gradeFor(balance);
+  const grade = gradeFor(balance, cfg);
   const streak = currentStreak(entries);
   const score = gpa(entries);
 
@@ -74,7 +75,7 @@ export function buildReport({ cwd, project: projectKey } = {}) {
   let running = 0;
   const runningSeries = entries.map((e) => (running += e.delta || 0));
 
-  const a = getAnimal(loadConfig().animal);
+  const a = getAnimal(cfg.animal);
 
   const lines = [];
   lines.push(`# ${a.treat} Treats — ${projectName(project)} (${a.label}) Report Card`);
