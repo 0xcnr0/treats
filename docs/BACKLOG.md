@@ -35,4 +35,4 @@ Do one at a time; check it off (`- [x]`) when committed. Keep changes focused.
 ## Polish
 - [x] Make `treats report --archive` iterate every project (it currently archives
       only the cwd's project).
-- [ ] Graceful handling when `~/.treats` is on a read-only volume.
+- [x] Graceful handling when `~/.treats` is on a read-only volume.

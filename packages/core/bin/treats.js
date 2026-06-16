@@ -4,6 +4,7 @@ import {
   append, undoLast, resetLedger, resetProject, loadState, loadConfig, saveConfig, ensureConfig,
   entriesFor, balanceFor, projectKeyFor, projectName, listProjects, globalStats,
   CONFIG_FLAGS, coerceConfigValue, animalKeyFor, configFor, setProjectAnimal,
+  DATA_DIR,
 } from "../src/ledger.js";
 import { gradeFor, currentStreak, gpa } from "../src/grades.js";
 import { buildReport, archiveReport } from "../src/report.js";
@@ -527,4 +528,21 @@ async function main() {
   }
 }
 
-main();
+// A read-only or full ~/.treats volume (e.g. a locked-down corp Mac) shouldn't
+// crash with a raw stack trace. Catch the filesystem errors that mean "can't
+// write here" and explain it in one friendly line instead.
+const WRITE_ERRORS = new Set(["EROFS", "EACCES", "EPERM", "ENOSPC", "EDQUOT"]);
+main().catch((err) => {
+  if (err && WRITE_ERRORS.has(err.code)) {
+    const full = err.code === "ENOSPC" || err.code === "EDQUOT";
+    console.error(
+      full
+        ? `Treats couldn't save: the disk holding ${DATA_DIR} is full.`
+        : `Treats couldn't save to ${DATA_DIR} — that folder is read-only.`,
+    );
+    console.error("Your treat count is safe; nothing was changed this time.");
+    process.exitCode = 1;
+    return;
+  }
+  throw err; // unexpected — let it surface with a full stack trace
+});
