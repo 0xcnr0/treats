@@ -28,7 +28,7 @@ Do one at a time; check it off (`- [x]`) when committed. Keep changes focused.
 - [ ] Pet "thinking" pose while Claude is actively working (if detectable).
 
 ## Docs & site
-- [ ] A short animated GIF or SVG of petting, embedded on the site.
+- [x] A short animated GIF or SVG of petting, embedded on the site.
 - [x] An FAQ section on the website (privacy, uninstall, does it slow Claude down).
 - [x] Improve the README's troubleshooting section.
 

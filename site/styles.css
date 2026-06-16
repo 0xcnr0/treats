@@ -98,6 +98,40 @@ section h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); letter-spacing: -0.02em; mar
 .sub { max-width: 680px; margin: 0 auto 30px; color: var(--mut); font-size: 1.08rem; }
 .sub strong { color: var(--ink); }
 
+/* hero petting animation */
+.hero-art { width: min(240px, 64vw); margin: 6px auto 30px; }
+.hero-art svg { width: 100%; height: auto; display: block; overflow: visible; }
+.treat-hand {
+  transform-origin: 122px 22px;
+  animation: treat-stroke 1.6s ease-in-out infinite;
+}
+.treat-pet {
+  transform-origin: 120px 150px;
+  animation: treat-bob 1.6s ease-in-out infinite;
+}
+.treat-heart {
+  transform-origin: center;
+  animation: treat-float 1.8s ease-out infinite;
+}
+.treat-heart.h2 { animation-delay: 0.9s; }
+@keyframes treat-stroke {
+  0%, 100% { transform: translate(-10px, 0) rotate(-4deg); }
+  50% { transform: translate(10px, -4px) rotate(4deg); }
+}
+@keyframes treat-bob {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(2px) scaleY(0.97); }
+}
+@keyframes treat-float {
+  0% { opacity: 0; transform: translateY(0) scale(0.6); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-26px) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .treat-hand, .treat-pet, .treat-heart { animation: none; }
+  .treat-heart { opacity: 0.85; }
+}
+
 .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; }
 .btn {
   display: inline-block;
