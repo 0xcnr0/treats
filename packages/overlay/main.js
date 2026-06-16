@@ -84,7 +84,7 @@ function petState() {
   const g = core.gradeFor(balance);
   const a = currentAnimal();
   return {
-    emoji: a.emoji, treat: a.treat, voice: a.voice,
+    emoji: a.emoji, treat: a.treat, voice: a.voice, animalKey: a.key,
     balance, rank: g.name, tone: g.tone,
     project: core.projectName(project),
   };

@@ -18,8 +18,24 @@ let lastActive = Date.now();
 let lastLocalReact = 0;
 
 const projectEl = document.getElementById("project");
+let lastAnimal = null;
+
+// Reflect mood on the SVG itself: shut eyes when asleep, frown when in trouble.
+function syncSvgMood() {
+  const svg = petEl.querySelector(".pet-svg");
+  if (!svg) return;
+  svg.classList.toggle("sleeping", asleep);
+  svg.classList.toggle("sad", state.tone === "stern");
+}
+
 function render() {
-  petEl.textContent = state.emoji;
+  // Build the kawaii SVG character; only rebuild when the animal changes so
+  // running animations aren't reset on every state update.
+  const animalKey = state.animalKey || "dog";
+  if (animalKey !== lastAnimal && window.TreatsCharacter) {
+    petEl.innerHTML = window.TreatsCharacter.build(animalKey);
+    lastAnimal = animalKey;
+  }
   treatsEl.textContent = `${state.balance > 0 ? "+" : ""}${state.balance} ${state.treat}`;
   rankEl.textContent = state.rank;
   if (projectEl) projectEl.textContent = state.project ? `📁 ${state.project}` : "";
@@ -28,6 +44,7 @@ function render() {
   // Mood-based idle: a content wag when doing well, a droop when in trouble.
   petWrap.classList.toggle("joyful", happy && !asleep);
   petWrap.classList.toggle("droopy", state.tone === "stern" && !asleep);
+  syncSvgMood();
 }
 
 let welcomed = false;
@@ -146,12 +163,14 @@ function wake() {
   if (asleep) {
     asleep = false;
     petWrap.classList.remove("asleep");
+    syncSvgMood();
   }
 }
 setInterval(() => {
   if (!asleep && Date.now() - lastActive > 45000) {
     asleep = true;
     petWrap.classList.add("asleep");
+    syncSvgMood();
   }
 }, 2000);
 
