@@ -236,6 +236,27 @@ export const ANIMALS = {
       { name: "No Burrow", emoji: "⛔" },
     ],
   },
+
+  bee: {
+    key: "bee",
+    label: "Bee",
+    emoji: "🐝",
+    treat: "🌸",
+    voice: "Bzzz!",
+    give: "Nectar given",
+    scold: "Bad bee",
+    badPhrase: "a bad bee",
+    speak: "Bad bee.",
+    tiers: [
+      { name: "Queen Bee", emoji: "🏆" },
+      { name: "Honeymaker", emoji: "🌟" },
+      { name: "Good Bee", emoji: "⭐" },
+      { name: "Larva", emoji: "🐝" },
+      { name: "Needs Training", emoji: "⚠️" },
+      { name: "Bad Bee", emoji: "🚫" },
+      { name: "No Hive", emoji: "⛔" },
+    ],
+  },
 };
 
 export const DEFAULT_ANIMAL = "dog";

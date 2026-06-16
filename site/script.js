@@ -31,6 +31,8 @@ const ANIMALS = {
     tiers: [["Emperor","🏆"],["Great Penguin","🌟"],["Good Penguin","⭐"],["Chick","🐧"],["Needs Training","⚠️"],["Bad Penguin","🚫"],["No Iceberg","⛔"]] },
   rabbit: { label: "Rabbit", emoji: "🐰", treat: "🥬", voice: "Thump!", badPhrase: "a bad bunny",
     tiers: [["Top Bunny","🏆"],["Great Bunny","🌟"],["Good Bunny","⭐"],["Cottontail","🐰"],["Needs Training","⚠️"],["Bad Bunny","🚫"],["No Burrow","⛔"]] },
+  bee: { label: "Bee", emoji: "🐝", treat: "🌸", voice: "Bzzz!", badPhrase: "a bad bee",
+    tiers: [["Queen Bee","🏆"],["Honeymaker","🌟"],["Good Bee","⭐"],["Larva","🐝"],["Needs Training","⚠️"],["Bad Bee","🚫"],["No Hive","⛔"]] },
 };
 
 let ANIMAL = ANIMALS[localStorage.getItem("treats-animal") || "dog"] || ANIMALS.dog;
