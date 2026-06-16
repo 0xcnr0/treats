@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.5.0 — Polished by its own autopilot
+
+A long autonomous run (`npm run autopilot`) plus cleanup landed a wave of polish:
+
+- **Twelve animals** — added fox 🦊, panda 🐼, frog 🐸, penguin 🐧, rabbit 🐰 and
+  bee 🐝, each with its own ranks and voice.
+- **Per-project animal** — `treats animal cat --here` themes just one repo.
+- **`treats config`** — view/set settings without hand-editing JSON.
+- **Double-click the pet** to open its report card.
+- **Report archive per project** (not just the cwd's), with collision-safe names.
+- **Graceful on read-only/full disk** — never crashes a session.
+- **Website FAQ** + README **Troubleshooting** section.
+- **Test suite grew to 106 tests** (grades, ledger, hooks, context, animals) and
+  **CI now runs them**.
+
 ## v0.4.0 — Learns, guards, and improves itself
 
 - **Learned house rules.** Recurring scolding reasons for a project become
