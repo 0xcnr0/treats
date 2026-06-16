@@ -1,5 +1,5 @@
 // Desktop pet renderer.
-// Quick click = treat · press-and-drag = move · right-click = scold.
+// Quick click = treat · double-click = report card · press-and-drag = move · right-click = scold.
 // It speaks (per-animal bubble), wiggles when idle, falls asleep after a while,
 // wakes up when you interact, and reacts when its score changes from anywhere.
 
@@ -109,6 +109,7 @@ function reactSad() {
 
 // --- treat / scold (local, via the mouse) ---
 let lastPat = 0;
+let patTimer = null;
 function pat() {
   const now = Date.now();
   if (now - lastPat < 300) return;
@@ -116,7 +117,13 @@ function pat() {
   lastLocalReact = now;
   markActive();
   reactHappy();
-  window.cte?.petPat?.();
+  // Animate instantly, but defer the ledger write briefly so a double-click
+  // (which opens the report card) doesn't also score a stray treat.
+  clearTimeout(patTimer);
+  patTimer = setTimeout(() => {
+    patTimer = null;
+    window.cte?.petPat?.();
+  }, 240);
 }
 function scold() {
   lastLocalReact = Date.now();
@@ -192,6 +199,16 @@ document.addEventListener("mouseup", () => {
 petWrap.addEventListener("click", () => {
   if (suppressClick) return;
   pat();
+});
+// Double-click opens this project's report card. Cancel the pending treat from
+// the first click so peeking at the card doesn't reward the pet.
+petWrap.addEventListener("dblclick", () => {
+  if (suppressClick) return;
+  clearTimeout(patTimer);
+  patTimer = null;
+  markActive();
+  say("Report card 📋", "happy");
+  window.cte?.petReport?.();
 });
 
 // Wake the pet when you just move the mouse near/over it.

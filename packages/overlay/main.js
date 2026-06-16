@@ -7,8 +7,10 @@ const {
   screen,
   ipcMain,
   nativeImage,
+  shell,
 } = require("electron");
 const path = require("node:path");
+const fs = require("node:fs");
 const { typeIntoFocusedApp } = require("./lib/automation.cjs");
 const { PRAISE, SCOLD, pick } = require("./lib/messages.cjs");
 
@@ -16,11 +18,12 @@ const { PRAISE, SCOLD, pick } = require("./lib/messages.cjs");
 // process and cache what we need.
 let core = null;
 async function loadCore() {
-  const [ledger, grades, sound, animals] = await Promise.all([
+  const [ledger, grades, sound, animals, report] = await Promise.all([
     import("@treats/core/ledger"),
     import("@treats/core/grades"),
     import("@treats/core/sound"),
     import("@treats/core/animals"),
+    import("@treats/core/report"),
   ]);
   core = {
     append: ledger.append,
@@ -36,7 +39,24 @@ async function loadCore() {
     play: sound.play,
     getAnimal: animals.getAnimal,
     ANIMALS: animals.ANIMALS,
+    buildReport: report.buildReport,
+    REPORTS_DIR: report.REPORTS_DIR,
   };
+}
+
+// Build this project's report card and open it in the user's default viewer.
+// Triggered by a double-click on the pet (or the tray menu).
+function openReportCard() {
+  if (!core) return;
+  try {
+    fs.mkdirSync(core.REPORTS_DIR, { recursive: true });
+    const md = core.buildReport({ project: activeProject() });
+    const file = path.join(core.REPORTS_DIR, "latest.md");
+    fs.writeFileSync(file, md);
+    shell.openPath(file);
+  } catch {
+    /* couldn't write/open the card — nothing else to do */
+  }
 }
 
 // The project the pet currently represents: the last session you were active in,
@@ -159,6 +179,7 @@ function buildMenu() {
     { type: "separator" },
     { label: "Give a treat  (⌘⇧G)", click: () => give("reward") },
     { label: "Bad dog  (⌘⇧B)", click: () => give("punish") },
+    { label: "Open report card", click: () => openReportCard() },
     { type: "separator" },
     { label: "Animal", submenu: animalMenu() },
     {
@@ -206,6 +227,7 @@ app.whenReady().then(async () => {
   // Mouse on the pet:
   ipcMain.on("pet:pat", () => give("reward"));
   ipcMain.on("pet:scold", () => give("punish"));
+  ipcMain.on("pet:report", () => openReportCard());
 
   // Drag the pet window by pressing-and-dragging the animal.
   let dragOrigin = null;

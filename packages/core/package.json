@@ -13,7 +13,8 @@
     "./context": "./src/context.js",
     "./animals": "./src/animals.js",
     "./paths": "./src/paths.js",
-    "./sound": "./src/sound.js"
+    "./sound": "./src/sound.js",
+    "./report": "./src/report.js"
   },
   "license": "MIT"
 }

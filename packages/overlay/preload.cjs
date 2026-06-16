@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("cte", {
   // desktop pet
   petPat: () => ipcRenderer.send("pet:pat"),
   petScold: () => ipcRenderer.send("pet:scold"),
+  petReport: () => ipcRenderer.send("pet:report"),
   petDragStart: () => ipcRenderer.send("pet:dragStart"),
   petDragMove: (dx, dy) => ipcRenderer.send("pet:dragMove", { dx, dy }),
   petDragEnd: () => ipcRenderer.send("pet:dragEnd"),
