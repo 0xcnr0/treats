@@ -20,7 +20,7 @@ function usage() {
 Usage:
   treats good [reason...]     Give Claude a treat (+1) for good work
   treats bad  [reason...]     Scold Claude (-1) for bad work
-  treats undo                Take back the last treat/scolding
+  treats undo [--project N]  Take back the last treat/scolding (in project N)
   treats reset --yes         Wipe the whole record (backs it up first)
   treats status [--json]     This project's treats, rank and last feedback
   treats projects [--json]   List every project and its score
@@ -140,16 +140,59 @@ function cmdConfig(args) {
   console.log(`✅ ${key} = ${value}`);
 }
 
-function cmdUndo() {
-  const result = undoLast(here());
+// Resolve a user-typed project name (its folder name, or a full project key) to
+// a stored project key. Returns { project } on a unique match, else { error }.
+function resolveProject(name) {
+  const all = listProjects();
+  const exact = all.find((p) => p.project === name);
+  if (exact) return { project: exact.project };
+  const byName = all.filter((p) => projectName(p.project) === name);
+  if (byName.length === 1) return { project: byName[0].project };
+  if (byName.length > 1) {
+    return {
+      error:
+        `"${name}" matches ${byName.length} projects:\n` +
+        byName.map((p) => `   ${p.project}`).join("\n") +
+        `\n   Pass the full path to disambiguate.`,
+    };
+  }
+  return {
+    error:
+      `No project named "${name}".` +
+      (all.length
+        ? `\n   Known: ${all.map((p) => projectName(p.project)).join(", ")}`
+        : ""),
+  };
+}
+
+function cmdUndo(args = []) {
+  let project = here();
+  const pIdx = args.indexOf("--project");
+  if (pIdx !== -1) {
+    const name = args[pIdx + 1];
+    if (!name) {
+      console.error("Usage: treats undo --project <name>");
+      process.exitCode = 1;
+      return;
+    }
+    const resolved = resolveProject(name);
+    if (resolved.error) {
+      console.error(resolved.error);
+      process.exitCode = 1;
+      return;
+    }
+    project = resolved.project;
+  }
+
+  const result = undoLast(project);
   if (!result) {
-    console.log("Nothing to undo in this project.");
+    console.log(`Nothing to undo in ${projectName(project)}.`);
     return;
   }
   const { entry, balance } = result;
   const mark = entry.type === "reward" ? "treat (+1)" : "scolding (-1)";
   play("report");
-  console.log(`↩️  Took back the last ${mark} · ${projectName(here())}. Treats: ${balance} — ${rankLine(balance)}`);
+  console.log(`↩️  Took back the last ${mark} · ${projectName(project)}. Treats: ${balance} — ${rankLine(balance)}`);
   if (entry.reason) console.log(`   Removed: ${entry.reason}`);
 }
 
@@ -379,7 +422,7 @@ async function main() {
       cmdPunish(args);
       break;
     case "undo":
-      cmdUndo();
+      cmdUndo(args);
       break;
     case "reset":
       cmdReset(args);

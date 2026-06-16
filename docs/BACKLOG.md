@@ -18,7 +18,7 @@ Do one at a time; check it off (`- [x]`) when committed. Keep changes focused.
 - [x] `treats stats` — totals across all projects (treats given, scoldings, top
       rank, busiest project).
 - [x] `treats projects --json` for scripting.
-- [ ] `treats undo --project <name>` to undo in a non-current project.
+- [x] `treats undo --project <name>` to undo in a non-current project.
 
 ## Pet & UX
 - [ ] More animals (fox 🦊, panda 🐼, frog 🐸, penguin 🐧) with ranks + voices.
